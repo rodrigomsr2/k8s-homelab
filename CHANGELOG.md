@@ -9,6 +9,17 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ## [Unreleased]
 
+---
+
+## [0.1.1] — 2026-04-07
+
+### Fixed
+- CHANGELOG atualizado com entrada do milestone `v0.1.0`
+
+---
+
+## [0.1.0] — vm-provisioned — 2026-04-07
+
 ### Added
 - Provisionamento de VM Ubuntu 24.04 via Terraform + KVM/libvirt
 - Chave SSH ED25519 gerada pelo Terraform, isolada por projeto
@@ -18,15 +29,3 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 - ADR-001: escolha do KVM como hypervisor
 - ADR-002: escolha do k3s como distribuição Kubernetes
 - ADR-003: escolha da Ubuntu 24.04 cloud image
-
----
-
-<!-- Exemplo de entrada após taguear v0.1.0:
-
-## [0.1.0] — vm-provisioned — YYYY-MM-DD
-
-### Added
-- Provisionamento de VM Ubuntu 24.04 via Terraform + KVM/libvirt
-- ...
-
--->
