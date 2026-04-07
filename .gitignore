@@ -1,0 +1,17 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+!terraform.tfvars.example
+
+# Chaves SSH (NUNCA commitar!)
+.ssh/
+
+# Informações locais (IPs, paths, credenciais — nunca versionar)
+CLAUDE.local.md
+
+# Arquivos temporários
+*.log
+*.tmp
