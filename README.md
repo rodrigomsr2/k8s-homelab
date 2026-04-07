@@ -9,6 +9,7 @@ Ambiente local isolado para estudo e demonstração de habilidades DevOps.
 | KVM + libvirt | Hypervisor (virtualização enterprise) |
 | Terraform | Provisionamento de infraestrutura como código |
 | cloud-init | Configuração inicial da VM |
+| Ansible | Configuration management e instalação de software |
 | Kubernetes (k3s) | Orquestração de containers |
 | Prometheus | Coleta de métricas |
 | Grafana | Visualização de métricas |
@@ -19,7 +20,7 @@ Ambiente local isolado para estudo e demonstração de habilidades DevOps.
 | Tag | Estado | O que entrega |
 |-----|--------|---------------|
 | `v0.1.0` | ✅ | VM Ubuntu 24.04 via Terraform + KVM, SSH com ED25519, conectividade validada |
-| `v0.2.0` | 🔜 | k3s instalado, kubectl funcionando, pods básicos sobem |
+| `v0.2.0` | ✅ | k3s instalado via Ansible, kubectl funcional, DNS e rede validados |
 | `v0.3.0` | 🔜 | Prometheus + Grafana com dashboards de cluster |
 | `v0.4.0` | 🔜 | Grafana Loki coletando logs dos pods |
 | `v0.5.0` | 🔜 | GitOps com ArgoCD ou Flux |
@@ -50,15 +51,22 @@ k8s-homelab/
 │   └── cloud-init/
 │       ├── user-data.tpl
 │       └── network-config.yaml
+├── ansible/
+│   ├── install-k3s.yml              # Playbook de instalação do k3s
+│   └── inventory/
+│       └── hosts.ini.example        # Template de inventário — copiar e preencher
 ├── scripts/
-│   └── validate-connectivity.sh
+│   ├── validate-connectivity.sh     # Validação do milestone v0.1.0
+│   └── validate-k8s.sh             # Validação do milestone v0.2.0
 └── docs/
     ├── adr/
     │   ├── ADR-001-hypervisor.md
     │   ├── ADR-002-kubernetes-distro.md
-    │   └── ADR-003-vm-image.md
+    │   ├── ADR-003-vm-image.md
+    │   └── ADR-004-configuration-management.md
     ├── guides/
-    │   └── vm-provisioning.md
+    │   ├── vm-provisioning.md
+    │   └── kubernetes.md
     └── runbook/
         ├── libvirt.md
         ├── kubernetes.md
@@ -67,12 +75,19 @@ k8s-homelab/
 
 ## Início rápido
 
-Consulte [`docs/guides/vm-provisioning.md`](docs/guides/vm-provisioning.md) para o guia completo de instalação.
+Consulte os guias de instalação em `docs/guides/` para instruções completas de cada milestone.
 
 ```bash
+# Milestone v0.1.0 — provisionar a VM
 cd terraform/
 terraform init
 terraform apply
+
+# Milestone v0.2.0 — instalar o k3s
+cp ansible/inventory/hosts.ini.example ansible/inventory/hosts.ini
+# editar hosts.ini com IP da VM e path da chave SSH
+cd ansible/
+ansible-playbook -i inventory/hosts.ini install-k3s.yml
 ```
 
 ## Documentação
@@ -80,6 +95,8 @@ terraform apply
 | Documento | Descrição |
 |-----------|-----------|
 | `docs/guides/vm-provisioning.md` | Guia de instalação do zero — milestone `v0.1.0` |
+| `docs/guides/kubernetes.md` | Guia de instalação do k3s via Ansible — milestone `v0.2.0` |
 | `docs/adr/` | Decisões arquiteturais e alternativas rejeitadas |
 | `docs/runbook/libvirt.md` | Operação do KVM e problemas encontrados |
+| `docs/runbook/kubernetes.md` | Operação do k3s e problemas encontrados |
 | `.claude/CLAUDE.md` | Índice de navegação para agentes de IA |

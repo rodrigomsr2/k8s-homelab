@@ -11,6 +11,19 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ---
 
+## [0.2.0] — k8s-operational — 2026-04-07
+
+### Added
+- Instalação do k3s via Ansible (playbook próprio em `ansible/install-k3s.yml`)
+- Inventário Ansible com template de exemplo (`ansible/inventory/hosts.ini.example`)
+- kubeconfig copiado automaticamente para `~/.kube/k8s-homelab.yaml` pelo playbook
+- Script de validação do cluster (`scripts/validate-k8s.sh`) com 4 camadas de testes:
+  infraestrutura básica, DNS externo, DNS interno e comunicação entre pods via Service
+- Guia de instalação do Kubernetes (`docs/guides/kubernetes.md`)
+- ADR-004: escolha do Ansible como ferramenta de configuration management
+
+---
+
 ## [0.1.1] — 2026-04-07
 
 ### Fixed

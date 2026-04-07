@@ -1,0 +1,72 @@
+---
+- name: Instalar e configurar k3s
+  hosts: k3s_nodes
+  become: true
+
+  vars:
+    k3s_version: "stable"
+    kubeconfig_remote_path: /etc/rancher/k3s/k3s.yaml
+    kubeconfig_local_path: "{{ lookup('env', 'HOME') }}/.kube/k8s-homelab.yaml"
+
+  tasks:
+
+    - name: Verificar se k3s já está instalado
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Baixar e instalar k3s
+      ansible.builtin.shell:
+        cmd: curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL={{ k3s_version }} sh -
+      when: not k3s_binary.stat.exists
+      changed_when: true
+
+    - name: Aguardar k3s ficar pronto
+      ansible.builtin.wait_for:
+        path: /var/lib/rancher/k3s/server/node-token
+        timeout: 60
+
+    - name: Garantir que k3s está habilitado e rodando
+      ansible.builtin.systemd:
+        name: k3s
+        enabled: true
+        state: started
+
+    - name: Aguardar node ficar Ready
+      ansible.builtin.command:
+        cmd: k3s kubectl get node
+      register: node_status
+      until: "'Ready' in node_status.stdout"
+      retries: 12
+      delay: 10
+      changed_when: false
+
+    - name: Ler kubeconfig da VM
+      ansible.builtin.slurp:
+        src: "{{ kubeconfig_remote_path }}"
+      register: kubeconfig_raw
+
+    - name: Decodificar kubeconfig
+      ansible.builtin.set_fact:
+        kubeconfig_content: "{{ kubeconfig_raw.content | b64decode }}"
+
+    - name: Substituir 127.0.0.1 pelo IP real da VM no kubeconfig
+      ansible.builtin.set_fact:
+        kubeconfig_final: >-
+          {{ kubeconfig_content | replace('https://127.0.0.1:6443', 'https://' + ansible_host + ':6443') }}
+
+    - name: Garantir que ~/.kube existe na máquina host
+      ansible.builtin.file:
+        path: "{{ kubeconfig_local_path | dirname }}"
+        state: directory
+        mode: '0700'
+      delegate_to: localhost
+      become: false
+
+    - name: Copiar kubeconfig para a máquina host
+      ansible.builtin.copy:
+        content: "{{ kubeconfig_final }}"
+        dest: "{{ kubeconfig_local_path }}"
+        mode: '0600'
+      delegate_to: localhost
+      become: false

@@ -9,6 +9,9 @@ terraform.tfstate.backup
 # Chaves SSH (NUNCA commitar!)
 .ssh/
 
+# Ansible
+ansible/inventory/hosts.ini
+
 # Informações locais (IPs, paths, credenciais — nunca versionar)
 CLAUDE.local.md
 
