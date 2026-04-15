@@ -37,6 +37,8 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 | `docs/adr/ADR-001-hypervisor.md` | KVM/libvirt como hypervisor |
 | `docs/adr/ADR-002-kubernetes-distro.md` | k3s como distribuição Kubernetes |
 | `docs/adr/ADR-003-vm-image.md` | Ubuntu 24.04 cloud image |
+| `docs/adr/ADR-004-configuration-management.md` | Ansible como ferramenta de configuration management |
+| `docs/adr/ADR-005-observability-stack.md` | Stack de observabilidade: deploy e configuração |
 
 ---
 
@@ -46,7 +48,7 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 |---------|-------|
 | `docs/runbook/libvirt.md` | KVM, libvirt, virsh, rede NAT |
 | `docs/runbook/kubernetes.md` | k3s, kubectl, pods, namespaces |
-| `docs/runbook/observability.md` | Prometheus, Grafana, Loki |
+| `docs/runbook/observability.md` | Prometheus, Grafana, Node Exporter |
 
 ---
 
@@ -54,5 +56,6 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 
 - Infraestrutura como código: toda mudança passa pelo Terraform
 - Nenhuma configuração manual na VM sem estar refletida no cloud-init ou em um runbook
-- Cada fase tem um script de validação em `scripts/` antes de avançar
+- Cada milestone tem um script de validação em `scripts/` antes de avançar
 - Chaves SSH e IPs locais vivem em `CLAUDE.local.md`, nunca no repositório
+- Manifests Kubernetes organizados em `k8s/<namespace>/` — um subdiretório por namespace

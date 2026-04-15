@@ -11,6 +11,24 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ---
 
+## [0.3.0] — observability-metrics — 2026-04-14
+
+### Added
+- Stack de observabilidade no namespace `monitoring`:
+  - Prometheus com RBAC, ConfigMap de scrape e Service
+  - Grafana com PersistentVolumeClaim, datasource provisionado via ConfigMap e Service
+  - Node Exporter como DaemonSet com acesso ao filesystem e `/run/udev` do host
+  - Ingress via Traefik para `grafana.homelab.local` e `prometheus.homelab.local`
+- Dashboard Kubernetes cluster monitoring (ID 315) adaptado para k3s/containerd (`k8s/monitoring/dashboards/kubernetes-cluster-monitoring-315.json`)
+- Script de validação da stack (`scripts/validate-observability.sh`) com 5 camadas de testes: pods, services, ingress, prometheus e grafana
+- Guia de instalação da stack de observabilidade (`docs/guides/observability-metrics.md`)
+- ADR-005: decisões de deploy e configuração da stack de observabilidade
+
+### Changed
+- Dashboard 315 adaptado: label `pod_name` → `pod`, filtro Docker removido, `systemd_service_name` substituído por `namespace`, painéis `Graph (old)` migrados para `Time series`, filtro de interface loopback adicionado nas métricas de rede
+
+---
+
 ## [0.2.0] — k8s-operational — 2026-04-07
 
 ### Added
