@@ -1,0 +1,21 @@
+config:
+  clients:
+    - url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+      tenant_id: homelab
+
+  snippets:
+    pipelineStages:
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.*\b(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\b'
+          max_wait_time: 100ms
+          max_lines: 500
+
+extraVolumes:
+  - name: containers-logs
+    hostPath:
+      path: /var/lib/rancher/k3s/agent/containerd
+
+extraVolumeMounts:
+  - name: containers-logs
+    mountPath: /var/lib/rancher/k3s/agent/containerd
+    readOnly: true

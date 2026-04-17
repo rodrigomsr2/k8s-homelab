@@ -27,6 +27,18 @@ data:
         isDefault: true
         editable: false
 
+  loki.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        url: http://loki-gateway.monitoring.svc.cluster.local
+        editable: false
+        jsonData:
+          httpHeaderName1: X-Scope-OrgID
+        secureJsonData:
+          httpHeaderValue1: homelab
+
 ---
 apiVersion: apps/v1
 kind: Deployment

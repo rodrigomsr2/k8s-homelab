@@ -11,6 +11,25 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ---
 
+## [0.4.0] — observability-logs — 2026-04-17
+
+### Added
+- Stack de logs no namespace `monitoring` via Helm:
+  - Loki em modo `SingleBinary` com storage filesystem, retenção de 7 dias e multi-tenancy habilitado (`tenant: homelab`)
+  - Promtail como DaemonSet coletando logs de todos os pods, com pipeline multiline para agrupar stacktraces Java
+  - Gateway nginx provisionado pelo chart do Loki como ponto de entrada único para leitura e escrita
+- Datasource Loki provisionado automaticamente no Grafana via ConfigMap (`04-grafana.yaml`)
+- Dashboard `Logs — Kubernetes` (`k8s/monitoring/dashboards/logs-kubernetes.json`) com filtros obrigatórios por namespace e app, filtro opcional por pod e busca por texto
+- Script de validação da stack de logs (`scripts/validate-observability-logs.sh`) com 5 camadas de testes: Loki, Promtail, PVC, API e streams indexados
+- Guia de instalação da stack de logs (`docs/guides/observability-logs.md`)
+- ADR-006: decisões de instalação e configuração da stack de logs
+- Runbook de operação da stack de logs (`docs/runbook/loki.md`)
+
+### Changed
+- `04-grafana.yaml` atualizado com datasource do Loki provisionado via ConfigMap
+
+---
+
 ## [0.3.0] — observability-metrics — 2026-04-14
 
 ### Added
