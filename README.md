@@ -17,6 +17,7 @@ Ambiente local isolado para estudo e demonstração de habilidades DevOps.
 | Grafana Loki | Agregação de logs |
 | Promtail | Coleta e envio de logs dos pods para o Loki |
 | Helm | Gerenciamento de charts Kubernetes |
+| ArgoCD | GitOps — deploy declarativo a partir do repositório |
 
 ## Milestones
 
@@ -26,7 +27,7 @@ Ambiente local isolado para estudo e demonstração de habilidades DevOps.
 | `v0.2.0` | ✅ | k3s instalado via Ansible, kubectl funcional, DNS e rede validados |
 | `v0.3.0` | ✅ | Prometheus + Grafana + Node Exporter operacionais, dashboards de cluster funcionais |
 | `v0.4.0` | ✅ | Grafana Loki + Promtail via Helm, logs dos pods coletados e consultáveis via Grafana |
-| `v0.5.0` | 🔜 | GitOps com ArgoCD ou Flux |
+| `v0.5.0` | ✅ | ArgoCD operacional, nexus-argocd gerenciado via GitOps a partir do k8s-gitops |
 | `v0.6.0` | 🔜 | RBAC, Network Policies, secrets gerenciados |
 | `v1.0.0` | 🔜 | Tudo integrado, documentado e com rollback validado |
 
@@ -59,23 +60,28 @@ k8s-homelab/
 │   └── inventory/
 │       └── hosts.ini.example              # Template de inventário — copiar e preencher
 ├── k8s/
-│   └── monitoring/
-│       ├── 01-namespace-rbac.yaml         # Namespace + RBAC do Prometheus
-│       ├── 02-prometheus-configmap.yaml   # Configuração de scrape do Prometheus
-│       ├── 03-prometheus.yaml             # Deployment + Service do Prometheus
-│       ├── 04-grafana.yaml                # PVC + Deployment + Service + datasources do Grafana
-│       ├── 05-ingress.yaml                # Ingress para Grafana e Prometheus
-│       ├── 06-node-exporter.yaml          # DaemonSet + Service do Node Exporter
-│       ├── loki-values.yaml               # Helm values do Loki
-│       ├── promtail-values.yaml           # Helm values do Promtail
-│       └── dashboards/
-│           ├── kubernetes-cluster-monitoring-315.json
-│           └── logs-kubernetes.json
+│   ├── monitoring/
+│   │   ├── 01-namespace-rbac.yaml         # Namespace + RBAC do Prometheus
+│   │   ├── 02-prometheus-configmap.yaml   # Configuração de scrape do Prometheus
+│   │   ├── 03-prometheus.yaml             # Deployment + Service do Prometheus
+│   │   ├── 04-grafana.yaml                # PVC + Deployment + Service + datasources do Grafana
+│   │   ├── 05-ingress.yaml                # Ingress para Grafana e Prometheus
+│   │   ├── 06-node-exporter.yaml          # DaemonSet + Service do Node Exporter
+│   │   ├── loki-values.yaml               # Helm values do Loki
+│   │   ├── promtail-values.yaml           # Helm values do Promtail
+│   │   └── dashboards/
+│   │       ├── kubernetes-cluster-monitoring-315.json
+│   │       └── logs-kubernetes.json
+│   └── cd/
+│       ├── argocd-values.yaml             # Helm values do ArgoCD
+│       ├── ingress.yaml                   # Ingress para argocd.homelab.local
+│       └── applicationset.yaml            # ApplicationSet — monitora apps/* no k8s-gitops
 ├── scripts/
 │   ├── validate-connectivity.sh           # Validação do milestone v0.1.0
 │   ├── validate-k8s.sh                    # Validação do milestone v0.2.0
 │   ├── validate-observability.sh          # Validação do milestone v0.3.0
-│   └── validate-observability-logs.sh     # Validação do milestone v0.4.0
+│   ├── validate-observability-logs.sh     # Validação do milestone v0.4.0
+│   └── validate-gitops.sh                 # Validação do milestone v0.5.0
 └── docs/
     ├── adr/
     │   ├── ADR-001-hypervisor.md
@@ -83,12 +89,14 @@ k8s-homelab/
     │   ├── ADR-003-vm-image.md
     │   ├── ADR-004-configuration-management.md
     │   ├── ADR-005-observability-stack.md
-    │   └── ADR-006-loki-stack.md
+    │   ├── ADR-006-loki-stack.md
+    │   └── ADR-007-gitops.md
     ├── guides/
     │   ├── vm-provisioning.md
     │   ├── kubernetes.md
     │   ├── observability-metrics.md
-    │   └── observability-logs.md
+    │   ├── observability-logs.md
+    │   └── gitops.md
     └── runbook/
         ├── libvirt.md
         ├── kubernetes.md
@@ -125,6 +133,15 @@ helm install promtail grafana/promtail \
   --kubeconfig=$HOME/.kube/k8s-homelab.yaml \
   --namespace monitoring \
   --values k8s/monitoring/promtail-values.yaml
+
+# Milestone v0.5.0 — instalar o ArgoCD e configurar GitOps
+helm install argocd argo/argo-cd \
+  --kubeconfig=$HOME/.kube/k8s-homelab.yaml \
+  --namespace argocd \
+  --values k8s/cd/argocd-values.yaml
+
+kubectl --kubeconfig=$HOME/.kube/k8s-homelab.yaml apply -f k8s/cd/ingress.yaml
+kubectl --kubeconfig=$HOME/.kube/k8s-homelab.yaml apply -f k8s/cd/applicationset.yaml
 ```
 
 ## Documentação
@@ -135,6 +152,7 @@ helm install promtail grafana/promtail \
 | `docs/guides/kubernetes.md` | Guia de instalação do k3s via Ansible — milestone `v0.2.0` |
 | `docs/guides/observability-metrics.md` | Guia de instalação da stack de observabilidade — milestone `v0.3.0` |
 | `docs/guides/observability-logs.md` | Guia de instalação da stack de logs — milestone `v0.4.0` |
+| `docs/guides/gitops.md` | Guia de instalação do ArgoCD e GitOps — milestone `v0.5.0` |
 | `docs/adr/` | Decisões arquiteturais e alternativas rejeitadas |
 | `docs/runbook/libvirt.md` | Operação do KVM e problemas encontrados |
 | `docs/runbook/kubernetes.md` | Operação do k3s e problemas encontrados |

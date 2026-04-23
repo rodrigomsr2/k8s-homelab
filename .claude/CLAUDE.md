@@ -1,6 +1,6 @@
 # k8s-homelab — Índice para IA
 
-Ambiente local isolado para estudo de DevOps: KVM + Terraform + Kubernetes + Prometheus + Grafana + Loki.
+Ambiente local isolado para estudo de DevOps: KVM + Terraform + Kubernetes + Prometheus + Grafana + Loki + ArgoCD.
 Construído em fases incrementais, cada fase validada antes de avançar.
 
 > Para visão geral, stack e início rápido: leia o `README.md`.
@@ -27,6 +27,7 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 | `v0.2.0` — Kubernetes | `docs/guides/kubernetes.md` | `docs/runbook/kubernetes.md` |
 | `v0.3.0` — Métricas | `docs/guides/observability-metrics.md` | `docs/runbook/observability.md` |
 | `v0.4.0` — Logs | `docs/guides/observability-logs.md` | `docs/runbook/loki.md` |
+| `v0.5.0` — GitOps | `docs/guides/gitops.md` | — |
 
 ---
 
@@ -40,6 +41,7 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 | `docs/adr/ADR-004-configuration-management.md` | Ansible como ferramenta de configuration management |
 | `docs/adr/ADR-005-observability-stack.md` | Stack de observabilidade: deploy e configuração |
 | `docs/adr/ADR-006-loki-stack.md` | Stack de logs: Helm, Promtail, SingleBinary, filesystem |
+| `docs/adr/ADR-007-gitops.md` | GitOps: ArgoCD via Helm, ApplicationSet, repositório k8s-gitops dedicado |
 
 ---
 
@@ -62,3 +64,4 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 - Chaves SSH e IPs locais vivem em `CLAUDE.local.md`, nunca no repositório
 - Manifests Kubernetes organizados em `k8s/<namespace>/` — um subdiretório por namespace
 - Charts Helm gerenciados via `values.yaml` versionados no repositório — sem `helm install` sem values explícitos
+- Aplicações gerenciadas pelo ArgoCD vivem no repositório `k8s-gitops` — nunca em `k8s/` deste repositório

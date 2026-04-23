@@ -11,6 +11,14 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ---
 
+## [0.5.1] — 2026-04-23
+
+### Fixed
+- `README.md` atualizado: ArgoCD adicionado na stack, `v0.5.0` marcado como concluído, `k8s/cd/` adicionado na estrutura, `validate-gitops.sh` nos scripts, `docs/guides/gitops.md` e `ADR-007-gitops.md` na documentação, milestone `v0.5.0` adicionado no início rápido
+- `.claude/CLAUDE.md` atualizado: ArgoCD adicionado na descrição, `v0.5.0` adicionado na tabela de guias, ADR-007 na tabela de ADRs, convenção de separação entre `k8s/` e `k8s-gitops` adicionada
+
+---
+
 ## [0.5.0] — gitops — 2026-04-23
 
 ### Added
