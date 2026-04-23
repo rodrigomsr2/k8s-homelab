@@ -1,0 +1,14 @@
+# Desabilitar componentes não utilizados
+dex:
+  enabled: false
+
+notifications:
+  enabled: false
+
+# Desabilitar TLS interno para que o Ingress Traefik possa fazer o proxy
+# sem conflito de certificados
+configs:
+  params:
+    server.insecure: true
+  cm:
+    url: http://argocd.homelab.local

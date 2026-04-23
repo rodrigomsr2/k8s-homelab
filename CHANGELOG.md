@@ -11,6 +11,21 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ---
 
+## [0.5.0] — gitops — 2026-04-23
+
+### Added
+- ArgoCD instalado via Helm chart oficial (`argo/argo-cd`) no namespace `argocd`, com `dex` e `notifications` desabilitados via `k8s/cd/argocd-values.yaml`
+- Ingress Traefik para `argocd.homelab.local` (`k8s/cd/ingress.yaml`)
+- `ApplicationSet` configurado com gerador de diretórios monitorando `apps/*/*` no repositório `k8s-gitops` (`k8s/cd/applicationset.yaml`)
+- Repositório `k8s-gitops` criado como fonte de verdade declarativa para manifests de aplicações gerenciadas pelo ArgoCD
+- Aplicação `nexus-argocd` deployada via GitOps — Deployment, Service e Ingress gerenciados pelo ArgoCD a partir do `k8s-gitops`
+- Script de validação do milestone (`scripts/validate-gitops.sh`) com 7 camadas de testes: pods ArgoCD, ApplicationSet, sync, health, pod da aplicação e ingresses
+- Guia de instalação do GitOps (`docs/guides/gitops.md`)
+- ADR-007: decisões de ferramenta GitOps, organização de repositórios, ApplicationSet e estrutura de manifests
+- Dashboard `k8s/monitoring/dashboards/jvm-metrics.json` para monitoramento de aplicações java
+
+---
+
 ## [0.4.0] — observability-logs — 2026-04-17
 
 ### Added
