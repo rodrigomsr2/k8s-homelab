@@ -18,6 +18,9 @@ Ambiente local isolado para estudo e demonstração de habilidades DevOps.
 | Promtail | Coleta e envio de logs dos pods para o Loki |
 | Helm | Gerenciamento de charts Kubernetes |
 | ArgoCD | GitOps — deploy declarativo a partir do repositório |
+| MongoDB | Banco de dados de documentos — VM dedicada |
+| Kafka | Streaming de eventos — VM dedicada |
+| OpenTelemetry | Coleta e exportação de traces distribuídos |
 
 ## Milestones
 
@@ -28,8 +31,15 @@ Ambiente local isolado para estudo e demonstração de habilidades DevOps.
 | `v0.3.0` | ✅ | Prometheus + Grafana + Node Exporter operacionais, dashboards de cluster funcionais |
 | `v0.4.0` | ✅ | Grafana Loki + Promtail via Helm, logs dos pods coletados e consultáveis via Grafana |
 | `v0.5.0` | ✅ | ArgoCD operacional, nexus-argocd gerenciado via GitOps a partir do k8s-gitops |
-| `v0.6.0` | 🔜 | RBAC, Network Policies, secrets gerenciados |
-| `v1.0.0` | 🔜 | Tudo integrado, documentado e com rollback validado |
+| `v0.5.2` | ✅ | Refactor do Terraform para módulo reutilizável `modules/vm/` — sem alteração funcional |
+| `v0.6.0` | 🔜 | VM dedicada provisionada via Terraform, MongoDB instalado e operacional |
+| `v0.7.0` | 🔜 | VM dedicada provisionada via Terraform, Kafka instalado e operacional |
+| `v0.8.0` | 🔜 | Microserviços no k8s consumindo Kafka e MongoDB |
+| `v0.9.0` | 🔜 | OpenTelemetry coletando traces dos microserviços, visível no Grafana |
+| `v0.10.0` | 🔜 | ArgoCD gerenciando toda a stack declarativamente |
+| `v0.11.0` | 🔜 | RBAC, Network Policies e Pod Security |
+| `v0.12.0` | 🔜 | Istio ou Linkerd gerenciando tráfego e mTLS entre serviços |
+| `v1.0.0` | 🔜 | Tudo integrado, documentado, estável e com rollback validado |
 
 ## Estrutura do repositório
 
@@ -45,18 +55,26 @@ k8s-homelab/
 │       └── project-organization.md
 ├── terraform/
 │   ├── CLAUDE.md                          # Índice do módulo Terraform
-│   ├── main.tf                            # Bloco terraform + provider
-│   ├── ssh.tf                             # Chaves ED25519
-│   ├── volumes.tf                         # Imagem base, disco VM, ISO cloud-init
-│   ├── cloudinit.tf                       # Configuração cloud-init
-│   ├── vm.tf                              # Domínio KVM
+│   ├── main.tf                            # Provider libvirt
+│   ├── ssh.tf                             # Chave ED25519 compartilhada
+│   ├── image.tf                           # Imagem base Ubuntu (compartilhada)
+│   ├── k8s.tf                             # Chamada do módulo para a VM do k8s
 │   ├── variables.tf
 │   ├── outputs.tf
-│   └── cloud-init/
-│       ├── user-data.tpl
-│       └── network-config.yaml
+│   └── modules/
+│       └── vm/
+│           ├── variables.tf
+│           ├── volumes.tf                 # Disco da VM + ISO cloud-init
+│           ├── cloudinit.tf
+│           ├── vm.tf                      # Domínio KVM
+│           ├── outputs.tf
+│           └── cloud-init/
+│               ├── user-data.tpl
+│               └── network-config.yaml
 ├── ansible/
 │   ├── install-k3s.yml                    # Playbook de instalação do k3s
+│   ├── install-mongodb.yml                # Playbook de instalação do MongoDB — milestone v0.6.0
+│   ├── install-kafka.yml                  # Playbook de instalação do Kafka — milestone v0.7.0
 │   └── inventory/
 │       └── hosts.ini.example              # Template de inventário — copiar e preencher
 ├── k8s/
@@ -81,7 +99,9 @@ k8s-homelab/
 │   ├── validate-k8s.sh                    # Validação do milestone v0.2.0
 │   ├── validate-observability.sh          # Validação do milestone v0.3.0
 │   ├── validate-observability-logs.sh     # Validação do milestone v0.4.0
-│   └── validate-gitops.sh                 # Validação do milestone v0.5.0
+│   ├── validate-gitops.sh                 # Validação do milestone v0.5.0
+│   ├── validate-mongodb.sh                # Validação do milestone v0.6.0
+│   └── validate-kafka.sh                  # Validação do milestone v0.7.0
 └── docs/
     ├── adr/
     │   ├── ADR-001-hypervisor.md
@@ -90,7 +110,8 @@ k8s-homelab/
     │   ├── ADR-004-configuration-management.md
     │   ├── ADR-005-observability-stack.md
     │   ├── ADR-006-loki-stack.md
-    │   └── ADR-007-gitops.md
+    │   ├── ADR-007-gitops.md
+    │   └── ADR-008-terraform-module-structure.md
     ├── guides/
     │   ├── vm-provisioning.md
     │   ├── kubernetes.md
@@ -109,7 +130,7 @@ k8s-homelab/
 Consulte os guias de instalação em `docs/guides/` para instruções completas de cada milestone.
 
 ```bash
-# Milestone v0.1.0 — provisionar a VM
+# Milestone v0.1.0 — provisionar a VM do k8s
 cd terraform/
 terraform init
 terraform apply
@@ -142,6 +163,16 @@ helm install argocd argo/argo-cd \
 
 kubectl --kubeconfig=$HOME/.kube/k8s-homelab.yaml apply -f k8s/cd/ingress.yaml
 kubectl --kubeconfig=$HOME/.kube/k8s-homelab.yaml apply -f k8s/cd/applicationset.yaml
+
+# Milestone v0.6.0 — provisionar VM do MongoDB e instalar
+cd terraform/
+terraform apply
+ansible-playbook -i inventory/hosts.ini install-mongodb.yml
+
+# Milestone v0.7.0 — provisionar VM do Kafka e instalar
+cd terraform/
+terraform apply
+ansible-playbook -i inventory/hosts.ini install-kafka.yml
 ```
 
 ## Documentação

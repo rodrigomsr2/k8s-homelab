@@ -1,15 +1,15 @@
-output "vm_name" {
-  description = "Nome da VM"
-  value       = libvirt_domain.vm.name
-}
-
-output "private_key_path" {
-  description = "Caminho da chave SSH privada"
-  value       = local_sensitive_file.private_key.filename
-  sensitive   = true
+output "k8s_vm_name" {
+  description = "Nome da VM do Kubernetes"
+  value       = module.k8s.vm_name
 }
 
 output "ssh_user" {
-  description = "Usuário SSH da VM"
-  value       = var.vm_user
+  description = "Usuário SSH padrão das VMs (convenção do projeto)"
+  value       = "devops"
+}
+
+output "private_key_path" {
+  description = "Caminho da chave SSH privada compartilhada"
+  value       = local_sensitive_file.private_key.filename
+  sensitive   = true
 }

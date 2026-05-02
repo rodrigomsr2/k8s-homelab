@@ -121,7 +121,8 @@ cd terraform/
 terraform init
 ```
 
-O Terraform baixa o provider `dmacvicar/libvirt`. Saída esperada:
+O Terraform baixa o provider `dmacvicar/libvirt` e registra o módulo
+`modules/vm/`. Saída esperada:
 
 ```
 Terraform has been successfully initialized!
@@ -137,14 +138,14 @@ Recursos que serão criados:
 
 | Recurso | O que é |
 |---------|---------|
-| `tls_private_key.homelab` | Par de chaves ED25519 gerado na memória |
+| `tls_private_key.homelab` | Par de chaves ED25519 (compartilhada entre VMs) |
 | `local_sensitive_file.private_key` | Chave privada salva em `.ssh/homelab_ed25519` |
 | `local_file.public_key` | Chave pública salva em `.ssh/homelab_ed25519.pub` |
-| `libvirt_volume.ubuntu_base` | Download da imagem Ubuntu 24.04 cloud (~600 MB) |
-| `libvirt_volume.vm_disk` | Disco da VM (40 GB, copy-on-write sobre a base) |
-| `libvirt_cloudinit_disk.init` | Configuração cloud-init |
-| `libvirt_volume.cloudinit_iso` | ISO cloud-init no pool |
-| `libvirt_domain.vm` | A VM em si (8 GB RAM, 4 vCPUs) |
+| `libvirt_volume.ubuntu_base` | Download da imagem Ubuntu 24.04 cloud (~600 MB, compartilhada) |
+| `module.k8s.libvirt_volume.vm_disk` | Disco da VM (40 GiB, CoW sobre ubuntu_base) |
+| `module.k8s.libvirt_cloudinit_disk.init` | Configuração cloud-init |
+| `module.k8s.libvirt_volume.cloudinit_iso` | ISO cloud-init no pool |
+| `module.k8s.libvirt_domain.vm` | A VM em si (8 GiB RAM, 4 vCPUs) |
 
 ### 3. Aplicar
 

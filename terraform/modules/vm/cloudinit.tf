@@ -4,7 +4,7 @@
 # e consumida pelo cloud-init durante o primeiro boot.
 #
 # O que é configurado via cloud-init (ver cloud-init/user-data.tpl):
-#   - Usuário devops com sudo sem senha
+#   - Usuário com sudo sem senha
 #   - Autenticação SSH por chave ED25519 (senha desabilitada)
 #   - Swap desabilitado (requisito do Kubernetes)
 #   - Módulos de kernel overlay e br_netfilter (requisitos do Kubernetes)
@@ -15,7 +15,7 @@ resource "libvirt_cloudinit_disk" "init" {
   user_data = templatefile("${path.module}/cloud-init/user-data.tpl", {
     hostname   = var.vm_name
     username   = var.vm_user
-    public_key = tls_private_key.homelab.public_key_openssh
+    public_key = var.ssh_public_key
   })
   meta_data = jsonencode({
     "instance-id"    = var.vm_name

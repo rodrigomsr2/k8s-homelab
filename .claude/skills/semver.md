@@ -33,8 +33,14 @@ vMAJOR.MINOR.PATCH
 | `v0.2.0` | `k8s-operational` | k3s instalado, kubectl funcionando, pods básicos sobem, CNI operacional |
 | `v0.3.0` | `observability-metrics` | Prometheus coletando métricas do cluster, Grafana com dashboards funcionais |
 | `v0.4.0` | `observability-logs` | Grafana Loki coletando e consultando logs dos pods |
-| `v0.5.0` | `gitops` | ArgoCD ou Flux gerenciando deploys declarativamente a partir do repositório |
-| `v0.6.0` | `security-hardening` | RBAC, Network Policies e secrets gerenciados |
+| `v0.5.0` | `gitops` | ArgoCD gerenciando deploys declarativamente a partir do repositório |
+| `v0.6.0` | `mongodb-operational` | VM dedicada provisionada via Terraform, MongoDB instalado e operacional |
+| `v0.7.0` | `kafka-operational` | VM dedicada provisionada via Terraform, Kafka instalado e operacional |
+| `v0.8.0` | `microservices-operational` | Microserviços no k8s consumindo Kafka e MongoDB |
+| `v0.9.0` | `tracing-operational` | OpenTelemetry coletando traces dos microserviços, visível no Grafana |
+| `v0.10.0` | `gitops-full` | ArgoCD gerenciando toda a stack declarativamente |
+| `v0.11.0` | `security-hardening` | RBAC, Network Policies e Pod Security |
+| `v0.12.0` | `service-mesh` | Istio ou Linkerd gerenciando tráfego e mTLS entre serviços |
 | `v1.0.0` | `production-ready` | Tudo integrado, documentado, estável e com rollback validado |
 
 ---

@@ -1,18 +1,19 @@
-# Terraform
+# Terraform — cache local, state e variáveis
 .terraform/
-.terraform.lock.hcl
-terraform.tfstate
-terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
+*.tfplan
 *.tfvars
-!terraform.tfvars.example
+!*.tfvars.example
+# .terraform.lock.hcl é versionado — garante providers reprodutíveis
 
-# Chaves SSH (NUNCA commitar!)
+# Chaves SSH geradas pelo Terraform — nunca versionar
 .ssh/
 
-# Ansible
+# Ansible — inventário com IPs e paths locais
 ansible/inventory/hosts.ini
 
-# Informações locais (IPs, paths, credenciais — nunca versionar)
+# Informações locais (IPs, paths, credenciais)
 CLAUDE.local.md
 
 # Arquivos temporários

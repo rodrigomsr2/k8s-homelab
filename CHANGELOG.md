@@ -11,6 +11,24 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ---
 
+## [0.5.2] — 2026-05-01
+
+### Changed
+- Refactor do Terraform para módulo reutilizável `modules/vm/`. (...)
+- Outputs do Terraform reorganizados: `vm_name` → `k8s_vm_name`.
+- `scripts/validate-connectivity.sh` atualizado para consumir `k8s_vm_name`.
+
+### Added
+- ADR-008: estrutura modular do Terraform.
+- `terraform/modules/vm/versions.tf`: declaração de `required_providers` para o módulo.
+- Runbook `libvirt.md` problema #6: procedimento de `terraform state mv`.
+
+### Migration notes
+- 4 resources movidos no state sem destruir infra: `libvirt_volume.vm_disk`, `libvirt_volume.cloudinit_iso`, `libvirt_cloudinit_disk.init`, `libvirt_domain.vm` → `module.k8s.*`.
+- `libvirt_volume.ubuntu_base` permanece no root como recurso compartilhado.
+
+---
+
 ## [0.5.1] — 2026-04-23
 
 ### Fixed

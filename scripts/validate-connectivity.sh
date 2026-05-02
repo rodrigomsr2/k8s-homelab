@@ -27,7 +27,7 @@ echo ""
 cd "$(dirname "$0")/../terraform"
 
 info "Lendo outputs do Terraform..."
-VM_NAME=$(terraform output -raw vm_name 2>/dev/null) \
+VM_NAME=$(terraform output -raw k8s_vm_name 2>/dev/null) \
   || fail "Não foi possível obter o nome da VM. Execute 'terraform apply' primeiro."
 KEY_PATH=$(terraform output -raw private_key_path 2>/dev/null) \
   || fail "Não foi possível obter o caminho da chave SSH."

@@ -1,59 +1,70 @@
 # terraform/ — Índice para IA
 
-Provisionamento da VM via Terraform + provider `dmacvicar/libvirt` v0.9.x.
+Provisionamento de VMs via Terraform + provider `dmacvicar/libvirt` v0.9.x.
+Estrutura modular: cada VM é uma chamada do módulo `modules/vm/`.
 
 ---
 
-## Arquivos
+## Arquivos do root
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
 | `main.tf` | Bloco `terraform` (versões, providers) e configuração do provider libvirt |
-| `ssh.tf` | Geração do par de chaves ED25519 e salvamento local em `.ssh/` |
-| `volumes.tf` | Imagem base Ubuntu, disco da VM (CoW), ISO cloud-init |
-| `cloudinit.tf` | Configuração cloud-init gerada a partir dos templates em `cloud-init/` |
-| `vm.tf` | Domínio KVM — a VM em si (CPU, disco, rede, console) |
-| `variables.tf` | Todas as variáveis configuráveis do módulo |
-| `outputs.tf` | Outputs pós-apply (nome da VM, usuário SSH, path da chave) |
+| `ssh.tf` | Geração do par ED25519 — chave compartilhada entre todas as VMs |
+| `image.tf` | Imagem base Ubuntu 24.04 — recurso compartilhado |
+| `k8s.tf` | Chamada do módulo para a VM do Kubernetes |
+| `variables.tf` | Variáveis de root (storage_pool, ubuntu_image_url) |
+| `outputs.tf` | Outputs prefixados por VM |
 
-## Templates
+## Módulo `modules/vm/`
 
-| Arquivo | O que faz |
-|---------|-----------|
-| `cloud-init/user-data.tpl` | Configura usuário, SSH, swap, módulos de kernel |
-| `cloud-init/network-config.yaml` | DHCP na interface enp1s0, DNS 8.8.8.8 e 1.1.1.1 |
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `variables.tf` | Inputs do módulo (vm_name, sizing, ssh_public_key, ubuntu_base_path) |
+| `volumes.tf` | Disco principal (CoW sobre base) e ISO cloud-init |
+| `cloudinit.tf` | Geração da config cloud-init via templates |
+| `vm.tf` | Domínio KVM — CPU, memória, disco, rede, console |
+| `outputs.tf` | vm_name |
+| `cloud-init/user-data.tpl` | Usuário, SSH, swap, módulos de kernel (k8s) |
+| `cloud-init/network-config.yaml` | DHCP em enp1s0, DNS 8.8.8.8 e 1.1.1.1 |
 
 ---
 
 ## Dependências entre recursos
 
 ```
-tls_private_key.homelab
+tls_private_key.homelab (root)
     ├── local_sensitive_file.private_key   (.ssh/homelab_ed25519)
     ├── local_file.public_key              (.ssh/homelab_ed25519.pub)
-    └── libvirt_cloudinit_disk.init        (public_key injetada no user-data)
+    └── module.k8s.ssh_public_key          (input do módulo)
 
-libvirt_volume.ubuntu_base
-    └── libvirt_volume.vm_disk             (backing_store)
+libvirt_volume.ubuntu_base (root)
+    └── module.k8s.ubuntu_base_path        (input do módulo)
+        └── module.k8s.libvirt_volume.vm_disk.backing_store
 
+(dentro do módulo:)
 libvirt_cloudinit_disk.init
     └── libvirt_volume.cloudinit_iso       (url = init.path)
 
-libvirt_volume.vm_disk ──────┐
-libvirt_volume.cloudinit_iso ┼──▶ libvirt_domain.vm
+libvirt_volume.vm_disk    ──────┐
+libvirt_volume.cloudinit_iso ───┼──▶ libvirt_domain.vm
 ```
 
 ---
 
 ## Notas importantes
 
-- O provider libvirt v0.9.x exige que o tipo do driver seja declarado
-  explicitamente no disco principal (`driver.type = "qcow2"`). Omitir resulta
-  em `raw` implícito e a VM trava na inicialização sem erro claro.
-- O cdrom (cloud-init ISO) não leva `driver.type` — é uma imagem raw.
-- `create.start = true` no `libvirt_domain` faz a VM iniciar imediatamente
-  após o `terraform apply`, sem necessidade de `virsh start` manual.
-- O IP da VM não é exposto como output — obtê-lo via `virsh domifaddr <nome>`.
-- O AppArmor requer a extensão local em
-  `/etc/apparmor.d/abstractions/libvirt-qemu.d/images` para permitir acesso
-  ao `/var/lib/libvirt/images/`. Ver `docs/runbook/libvirt.md` problema 4.
+- Provider libvirt v0.9.x exige `driver.type = "qcow2"` explícito
+  no disco principal — ver `runbook/libvirt.md` problema #5.
+- Cdrom (cloud-init ISO) não leva `driver.type` — imagem raw.
+- `create.start = true` faz a VM iniciar após `terraform apply`.
+- IP da VM não é exposto como output — usar `virsh domifaddr <nome>`.
+- AppArmor requer extensão local em `libvirt-qemu.d/images` —
+  ver `runbook/libvirt.md` problema #4.
+- Refactor envolvendo movimentação de resources para dentro do
+  módulo exige `terraform state mv` — ver `runbook/libvirt.md`
+  problema #6.
+- A imagem base Ubuntu fica no root (não no módulo) porque o nome
+  do volume é fixo no pool (`ubuntu-24.04-base`) — colocá-la no
+  módulo geraria conflito em chamadas múltiplas. Decisão registrada
+  na ADR-008.
