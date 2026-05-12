@@ -11,6 +11,20 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ---
 
+## [0.5.4] — 2026-05-01
+
+### Changed
+- Camada de observabilidade migrada para GitOps no repositório `k8s-gitops`:
+  - `apps/monitoring/monitoring-stack`: Prometheus, Grafana, Ingress, Node Exporter e RBAC
+  - `apps/monitoring/loki`: wrapper chart com dependência para `grafana/loki`
+  - `apps/monitoring/promtail`: wrapper chart com dependência para `grafana/promtail`
+- Guias de observabilidade atualizados para tratar ArgoCD como mecanismo de deploy, mantendo os scripts locais apenas como validação.
+- Diretório local de manifests Kubernetes removido após migração da observabilidade para GitOps.
+- Dashboards Grafana movidos para `monitoring-dashboards/` como localização temporária até serem migrados para o `k8s-gitops`.
+- ADR-010 adicionada para registrar a decisão de mover observabilidade para o paradigma GitOps.
+
+---
+
 ## [0.5.3] — 2026-05-01
 
 ### Changed

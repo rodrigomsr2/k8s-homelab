@@ -42,6 +42,7 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 | `docs/adr/ADR-005-observability-stack.md` | Stack de observabilidade: deploy e configuração |
 | `docs/adr/ADR-006-loki-stack.md` | Stack de logs: Helm, Promtail, SingleBinary, filesystem |
 | `docs/adr/ADR-007-gitops.md` | GitOps: ArgoCD via Helm, ApplicationSet, repositório k8s-gitops dedicado |
+| `docs/adr/ADR-010-monitoring-gitops.md` | Observabilidade gerenciada via GitOps no repositório k8s-gitops |
 
 ---
 
@@ -62,6 +63,7 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 - Nenhuma configuração manual na VM sem estar refletida no cloud-init ou em um runbook
 - Cada milestone tem um script de validação em `scripts/` antes de avançar
 - Chaves SSH e IPs locais vivem em `CLAUDE.local.md`, nunca no repositório
-- Manifests Kubernetes organizados em `k8s/<namespace>/` — um subdiretório por namespace
-- Charts Helm gerenciados via `values.yaml` versionados no repositório — sem `helm install` sem values explícitos
-- Aplicações gerenciadas pelo ArgoCD vivem no repositório `k8s-gitops` — nunca em `k8s/` deste repositório
+- Manifests Kubernetes de aplicações vivem no repositório `k8s-gitops`, organizados em `apps/<namespace>/<app>/`
+- Charts Helm gerenciados por ArgoCD devem usar wrapper charts com `Chart.yaml`, `Chart.lock` e `values.yaml`
+- Este repositório mantém apenas bootstrap, automação, validações, documentação e artefatos auxiliares
+- Dashboards Grafana ficam temporariamente em `monitoring-dashboards/`; futuramente devem migrar para o `k8s-gitops` junto ao Grafana

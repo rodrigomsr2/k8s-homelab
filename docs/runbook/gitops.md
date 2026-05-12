@@ -290,3 +290,71 @@ virsh net-dhcp-leases default
 
 Ingress e DNS local são camadas separadas. Se `curl --resolve` funciona e o
 hostname normal não, o problema está na resolução local, não no cluster.
+
+---
+
+## 9. Charts Helm dentro do ApplicationSet `apps/*/*`
+
+### Sintoma
+
+A migração da observabilidade para GitOps precisava incluir Loki e Promtail,
+que originalmente eram instalados com:
+
+```bash
+helm install loki grafana/loki --values apps/monitoring/loki/values.yaml
+helm install promtail grafana/promtail --values apps/monitoring/promtail/values.yaml
+```
+
+O ApplicationSet `homelab`, porém, cria uma Application por diretório
+`apps/*/*`. O diretório da aplicação precisa ser uma fonte que o ArgoCD
+consiga interpretar diretamente.
+
+### Causa
+
+Os values usados em `helm install grafana/loki --values ...` eram values do
+chart diretamente. Em um wrapper chart com dependência, os mesmos values
+precisam ficar aninhados sob a chave do subchart, por exemplo:
+
+```yaml
+loki:
+  deploymentMode: SingleBinary
+  loki:
+    commonConfig:
+      replication_factor: 1
+```
+
+### Solução
+
+Usar wrapper charts no `k8s-gitops`:
+
+```text
+k8s-gitops/apps/monitoring/loki/
+├── Chart.yaml
+├── Chart.lock
+└── values.yaml
+
+k8s-gitops/apps/monitoring/promtail/
+├── Chart.yaml
+├── Chart.lock
+└── values.yaml
+```
+
+Validar localmente:
+
+```bash
+helm dependency build apps/monitoring/loki
+helm template loki apps/monitoring/loki --namespace monitoring
+
+helm dependency build apps/monitoring/promtail
+helm template promtail apps/monitoring/promtail --namespace monitoring
+```
+
+O diretório `charts/` gerado por `helm dependency build` é artefato local e
+deve ficar ignorado. Versionar `Chart.lock` para fixar a resolução das
+dependências.
+
+### Lição
+
+Para aprender e operar GitOps com Helm, manter charts como charts é melhor
+do que commitar YAML renderizado. YAML renderizado só deve ser usado quando
+houver uma razão operacional clara para congelar a saída do template.

@@ -16,7 +16,7 @@ compactor.delete-request-store should be configured when retention is enabled"
 O campo `compactor.retention_enabled: true` exige que `compactor.delete_request_store` esteja configurado — o Loki precisa saber onde armazenar as requisições de deleção para processar a retenção.
 
 ### Solução
-Adicionar `delete_request_store` no bloco `compactor` do `loki-values.yaml`:
+Adicionar `delete_request_store` no bloco `compactor` dos values do wrapper chart do Loki em `k8s-gitops/apps/monitoring/loki/values.yaml`:
 
 ```yaml
 loki:
@@ -31,7 +31,7 @@ Aplicar com `helm upgrade`:
 helm upgrade loki grafana/loki \
   --kubeconfig=$HOME/.kube/k8s-homelab.yaml \
   --namespace monitoring \
-  --values k8s/monitoring/loki-values.yaml
+  --values ../k8s-gitops/apps/monitoring/loki/values.yaml
 ```
 
 ### Lição
@@ -52,7 +52,7 @@ O pod `loki-chunks-cache-0` fica em `Pending` indefinidamente. O `kubectl descri
 O chart do Loki habilita por padrão dois pods Memcached — `chunksCache` e `resultsCache` — como cache de leitura. O `chunksCache` solicita **9830Mi (~9.6GB)** de memória, inviável em um node com 8GB de RAM total.
 
 ### Solução
-Desabilitar ambos os caches no `loki-values.yaml`:
+Desabilitar ambos os caches nos values do wrapper chart do Loki:
 
 ```yaml
 chunksCache:
@@ -82,7 +82,7 @@ spec.template.spec.containers[0].volumeMounts[4].mountPath: Invalid value:
 O chart do Promtail já monta `/var/log/pods` por padrão. Adicionar o mesmo path em `extraVolumeMounts` causa duplicação.
 
 ### Solução
-Remover `/var/log/pods` dos `extraVolumeMounts` no `promtail-values.yaml` — manter apenas o path específico do k3s:
+Remover `/var/log/pods` dos `extraVolumeMounts` nos values do wrapper chart do Promtail — manter apenas o path específico do k3s:
 
 ```yaml
 extraVolumes:

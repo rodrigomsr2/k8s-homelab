@@ -26,7 +26,7 @@ Editar cada painel afetado e aplicar as seguintes correções nas queries:
 Para métricas de rede, remover `container!=""` — as métricas `container_network_*` são coletadas no nível do pod e não têm o label `container` preenchido.
 
 ### Lição
-Dashboards da comunidade Grafana frequentemente assumem Docker como runtime e versões antigas do Kubernetes. Sempre verificar a compatibilidade com a versão do Kubernetes e o runtime em uso antes de importar. O JSON adaptado para k3s/containerd está versionado em `k8s/monitoring/dashboards/kubernetes-cluster-monitoring-315.json`.
+Dashboards da comunidade Grafana frequentemente assumem Docker como runtime e versões antigas do Kubernetes. Sempre verificar a compatibilidade com a versão do Kubernetes e o runtime em uso antes de importar. O JSON adaptado para k3s/containerd está versionado em `monitoring-dashboards/kubernetes-cluster-monitoring-315.json`.
 
 ---
 

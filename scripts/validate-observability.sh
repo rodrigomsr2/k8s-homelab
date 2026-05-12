@@ -25,6 +25,20 @@ echo ""
 echo "=== Validação — v0.3.0 observability-metrics ==="
 echo ""
 
+# ── Camada 0: GitOps ─────────────────────────────────────────────────────────
+
+echo "  — argocd"
+
+for app in monitoring-stack; do
+  SYNC=$($KC get application "$app" -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
+  HEALTH=$($KC get application "$app" -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
+  if [ "$SYNC" = "Synced" ] && [ "$HEALTH" = "Healthy" ]; then
+    check "Application $app Synced + Healthy" "ok"
+  else
+    check "Application $app Synced + Healthy (sync: ${SYNC:-não encontrado}, health: ${HEALTH:-não encontrado})" "fail"
+  fi
+done
+
 # ── Camada 1: pods da stack ───────────────────────────────────────────────────
 
 echo "  — pods"
