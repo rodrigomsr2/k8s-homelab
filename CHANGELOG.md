@@ -11,17 +11,44 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ---
 
+## [0.5.3] — 2026-05-01
+
+### Changed
+- Bootstrap do ArgoCD migrado de `helm install` + `kubectl apply` manuais para playbook Ansible (`ansible/install-argocd.yml`). O release Helm continua sob controle do Ansible (não auto-managed pelo ArgoCD).
+- ApplicationSet renomeado de `nexus` para `homelab` e generalizado para `apps/*/*` com `destination.namespace: '{{path[1]}}'`. Um único ApplicationSet cobre todos os namespaces — `nexus`, `argocd`, e futuros.
+- `argocd-values.yaml` movido de `k8s/cd/` para `ansible/files/`. `ingress.yaml` e `applicationset.yaml` movidos para `k8s-gitops/apps/argocd/argocd-config/` — auto-managed via GitOps.
+- `docs/guides/gitops.md` reescrito para refletir o fluxo Ansible.
+
+### Added
+- `ansible/install-argocd.yml`: playbook de bootstrap. Instala chart `argo/argo-cd:9.5.13`, migra ApplicationSet legado, aplica o novo, extrai senha admin.
+- `ansible/bootstrap-cluster.yml`: wrapper opcional que executa `install-k3s.yml` + `install-argocd.yml` em sequência.
+- `ansible/requirements.yml`: collection `kubernetes.core >=3.0.0`.
+- `ansible/files/argocd-values.yaml`: cópia local do values do chart.
+- `ansible/files/applicationset.yaml`: cópia de bootstrap do ApplicationSet (sincronizada manualmente com `k8s-gitops/apps/argocd/argocd-config/applicationset.yaml`).
+- `ADR-009`: bootstrap do ArgoCD via Ansible, racional da duplicação consciente do `applicationset.yaml`, alternativas rejeitadas.
+- `.gitignore`: adicionado pattern `ansible/files/*-credentials.yml` para credenciais geradas pelos playbooks.
+
+### Removed
+- Diretório `k8s/cd/` — todos os arquivos migrados para `ansible/files/` ou `k8s-gitops/`.
+
+### Migration notes
+- O ApplicationSet legado `nexus` (do v0.5.0) é **deletado** pelo playbook antes da aplicação do novo `homelab`. Causa ~5 segundos de downtime das Applications geradas — coerente com filosofia "ambiente reconstruível do zero".
+- Antes de rodar o `install-argocd.yml`, garantir que o `k8s-gitops` está pushado com `apps/argocd/argocd-config/` populado. Caso contrário a Application `argocd-config` falha em sincronizar.
+- Após rodar o playbook, verificar que `scripts/validate-gitops.sh` ainda funciona — pode precisar atualizar referências de `nexus` para `homelab` se o script consultava o ApplicationSet pelo nome.
+
+---
+
 ## [0.5.2] — 2026-05-01
 
 ### Changed
-- Refactor do Terraform para módulo reutilizável `modules/vm/`. (...)
+- Refactor do Terraform para módulo reutilizável `modules/vm/`. A VM do k8s passa a ser instanciada via `module "k8s"` em `terraform/k8s.tf`. Recursos compartilhados (chave SSH ED25519, imagem base Ubuntu) ficam no root. Sem alteração funcional na infraestrutura — refactor estritamente de organização de código, validado via `terraform state mv` + `terraform plan` limpo.
 - Outputs do Terraform reorganizados: `vm_name` → `k8s_vm_name`.
 - `scripts/validate-connectivity.sh` atualizado para consumir `k8s_vm_name`.
 
 ### Added
-- ADR-008: estrutura modular do Terraform.
+- ADR-008: estrutura modular do Terraform — racional, alternativas rejeitadas.
 - `terraform/modules/vm/versions.tf`: declaração de `required_providers` para o módulo.
-- Runbook `libvirt.md` problema #6: procedimento de `terraform state mv`.
+- Runbook `libvirt.md` problema #6: procedimento de `terraform state mv` durante refactor.
 
 ### Migration notes
 - 4 resources movidos no state sem destruir infra: `libvirt_volume.vm_disk`, `libvirt_volume.cloudinit_iso`, `libvirt_cloudinit_disk.init`, `libvirt_domain.vm` → `module.k8s.*`.
@@ -42,7 +69,7 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 ### Added
 - ArgoCD instalado via Helm chart oficial (`argo/argo-cd`) no namespace `argocd`, com `dex` e `notifications` desabilitados via `k8s/cd/argocd-values.yaml`
 - Ingress Traefik para `argocd.homelab.local` (`k8s/cd/ingress.yaml`)
-- `ApplicationSet` configurado com gerador de diretórios monitorando `apps/*/*` no repositório `k8s-gitops` (`k8s/cd/applicationset.yaml`)
+- `ApplicationSet` configurado com gerador de diretórios monitorando `apps/nexus/*` no repositório `k8s-gitops` (`k8s/cd/applicationset.yaml`)
 - Repositório `k8s-gitops` criado como fonte de verdade declarativa para manifests de aplicações gerenciadas pelo ArgoCD
 - Aplicação `nexus-argocd` deployada via GitOps — Deployment, Service e Ingress gerenciados pelo ArgoCD a partir do `k8s-gitops`
 - Script de validação do milestone (`scripts/validate-gitops.sh`) com 7 camadas de testes: pods ArgoCD, ApplicationSet, sync, health, pod da aplicação e ingresses

@@ -12,9 +12,14 @@
 
 # Ansible — inventário com IPs e paths locais
 ansible/inventory/hosts.ini
+# Credenciais geradas pelos playbooks
+ansible/files/*-credentials.yml
 
 # Informações locais (IPs, paths, credenciais)
 CLAUDE.local.md
+
+# Ambiente Python local para ferramentas/Ansible
+.venv/
 
 # Arquivos temporários
 *.log

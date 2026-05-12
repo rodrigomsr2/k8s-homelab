@@ -1,0 +1,158 @@
+---
+- name: Preparar dependencias locais para o bootstrap do ArgoCD
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    local_venv_path: "{{ playbook_dir }}/../.venv"
+    local_python_deps:
+      - kubernetes
+      - PyYAML
+      - jsonpatch
+
+  tasks:
+    - name: Criar virtualenv local para modulos Kubernetes do Ansible
+      ansible.builtin.command:
+        cmd: python3 -m venv {{ local_venv_path }}
+        creates: "{{ local_venv_path }}/bin/python"
+
+    - name: Instalar dependencias Python no virtualenv local
+      ansible.builtin.pip:
+        name: "{{ local_python_deps }}"
+        executable: "{{ local_venv_path }}/bin/pip"
+
+- name: Bootstrap do ArgoCD no cluster Kubernetes
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    kubeconfig: "{{ lookup('env', 'HOME') }}/.kube/k8s-homelab.yaml"
+    local_venv_path: "{{ playbook_dir }}/../.venv"
+    ansible_python_interpreter: "{{ local_venv_path }}/bin/python"
+    argocd_chart_version: "9.5.13"
+    argocd_namespace: "argocd"
+    argocd_values_file: "{{ playbook_dir }}/files/argocd-values.yaml"
+    argocd_applicationset_file: "{{ playbook_dir }}/files/applicationset.yaml"
+    argocd_credentials_file: "{{ playbook_dir }}/files/argocd-credentials.yml"
+    argocd_applicationset_legacy_name: "nexus"
+    argocd_applicationset_name: "homelab"
+
+  tasks:
+    # ─── Pré-condições ────────────────────────────────────────────────────────
+
+    - name: Verificar acesso ao cluster via kubeconfig
+      ansible.builtin.command:
+        cmd: kubectl --kubeconfig {{ kubeconfig }} cluster-info
+      changed_when: false
+      register: cluster_info
+
+    - name: Confirmar que o kubeconfig responde
+      ansible.builtin.debug:
+        msg: "Cluster acessível — prosseguindo com o bootstrap"
+      when: cluster_info.rc == 0
+
+    # ─── Namespace + Helm release ────────────────────────────────────────────
+
+    - name: Criar namespace argocd (idempotente)
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig }}"
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ argocd_namespace }}"
+
+    - name: Adicionar repositório Helm do ArgoCD
+      kubernetes.core.helm_repository:
+        name: argo
+        repo_url: https://argoproj.github.io/argo-helm
+
+    - name: Instalar / atualizar ArgoCD via Helm (chart {{ argocd_chart_version }})
+      kubernetes.core.helm:
+        kubeconfig: "{{ kubeconfig }}"
+        name: argocd
+        chart_ref: argo/argo-cd
+        chart_version: "{{ argocd_chart_version }}"
+        release_namespace: "{{ argocd_namespace }}"
+        create_namespace: false
+        update_repo_cache: true
+        values_files:
+          - "{{ argocd_values_file }}"
+        wait: true
+        wait_timeout: 5m
+
+    # ─── ApplicationSet — migração do legado + aplicação do novo ─────────────
+
+    - name: Remover ApplicationSet legado '{{ argocd_applicationset_legacy_name }}' (v0.5.0)
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig }}"
+        state: absent
+        api_version: argoproj.io/v1alpha1
+        kind: ApplicationSet
+        namespace: "{{ argocd_namespace }}"
+        name: "{{ argocd_applicationset_legacy_name }}"
+        wait: true
+        wait_timeout: 120
+
+    - name: Aplicar ApplicationSet genérico '{{ argocd_applicationset_name }}'
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig }}"
+        state: present
+        src: "{{ argocd_applicationset_file }}"
+
+    - name: Aguardar Application 'argocd-config' aparecer (até 5 min)
+      ansible.builtin.command:
+        cmd: >
+          kubectl --kubeconfig {{ kubeconfig }}
+          -n {{ argocd_namespace }}
+          get application argocd-config
+      register: app_check
+      retries: 30
+      delay: 10
+      until: app_check.rc == 0
+      changed_when: false
+
+    # ─── Credenciais ─────────────────────────────────────────────────────────
+
+    - name: Extrair Secret com senha inicial do admin
+      kubernetes.core.k8s_info:
+        kubeconfig: "{{ kubeconfig }}"
+        api_version: v1
+        kind: Secret
+        namespace: "{{ argocd_namespace }}"
+        name: argocd-initial-admin-secret
+      register: argocd_admin_secret
+
+    - name: Gravar credenciais em arquivo gitignored
+      ansible.builtin.copy:
+        content: |
+          # ─── Credenciais iniciais do ArgoCD ────────────────────────────────
+          # Geradas automaticamente pelo Helm chart no primeiro install.
+          # Após o primeiro login, alterar via UI:
+          #   User Info → Update Password
+          #
+          # Após alterar a senha, o Secret pode (e deve) ser removido:
+          #   kubectl -n argocd delete secret argocd-initial-admin-secret
+          # ──────────────────────────────────────────────────────────────────
+
+          argocd_url: http://argocd.homelab.local
+          argocd_admin_username: admin
+          argocd_admin_password: "{{ argocd_admin_secret.resources[0].data.password | b64decode }}"
+        dest: "{{ argocd_credentials_file }}"
+        mode: '0600'
+      when: argocd_admin_secret.resources | length > 0
+
+    # ─── Resumo final ────────────────────────────────────────────────────────
+
+    - name: Resumo do bootstrap
+      ansible.builtin.debug:
+        msg:
+          - "✔ ArgoCD instalado (chart argo/argo-cd:{{ argocd_chart_version }})"
+          - "✔ ApplicationSet '{{ argocd_applicationset_name }}' aplicado — monitora apps/*/*"
+          - "✔ URL: http://argocd.homelab.local"
+          - "✔ Credenciais geradas em: {{ argocd_credentials_file }}"
+          - ""
+          - "Próximo passo: validar com 'bash scripts/validate-gitops.sh'"

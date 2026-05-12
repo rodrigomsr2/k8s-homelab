@@ -1,0 +1,18 @@
+---
+# Wrapper que executa o bootstrap completo do cluster em sequência:
+#
+#   1. install-k3s.yml     — provisiona o k3s na VM (via SSH)
+#   2. install-argocd.yml  — instala ArgoCD e configura o GitOps (via kubeconfig)
+#
+# Cada playbook mantém seus próprios hosts e contexto. Útil para reconstruir
+# o cluster do zero numa única invocação:
+#
+#   ansible-playbook -i inventory/hosts.ini bootstrap-cluster.yml
+#
+# Pré-requisitos:
+#   - Inventário Ansible configurado (cópia de hosts.ini.example)
+#   - Collection kubernetes.core instalada (ansible-galaxy install -r requirements.yml)
+#   - Repositório k8s-gitops com os manifests de bootstrap pushados
+
+- import_playbook: install-k3s.yml
+- import_playbook: install-argocd.yml

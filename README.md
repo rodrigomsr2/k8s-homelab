@@ -32,11 +32,12 @@ Ambiente local isolado para estudo e demonstração de habilidades DevOps.
 | `v0.4.0` | ✅ | Grafana Loki + Promtail via Helm, logs dos pods coletados e consultáveis via Grafana |
 | `v0.5.0` | ✅ | ArgoCD operacional, nexus-argocd gerenciado via GitOps a partir do k8s-gitops |
 | `v0.5.2` | ✅ | Refactor do Terraform para módulo reutilizável `modules/vm/` — sem alteração funcional |
+| `v0.5.3` | ✅ | Bootstrap do ArgoCD via Ansible, manifests auto-managed via k8s-gitops |
+| `v0.5.4` | 🔜 | Monitoring (Prometheus, Grafana, Loki) migrado para o k8s-gitops |
 | `v0.6.0` | 🔜 | VM dedicada provisionada via Terraform, MongoDB instalado e operacional |
 | `v0.7.0` | 🔜 | VM dedicada provisionada via Terraform, Kafka instalado e operacional |
 | `v0.8.0` | 🔜 | Microserviços no k8s consumindo Kafka e MongoDB |
 | `v0.9.0` | 🔜 | OpenTelemetry coletando traces dos microserviços, visível no Grafana |
-| `v0.10.0` | 🔜 | ArgoCD gerenciando toda a stack declarativamente |
 | `v0.11.0` | 🔜 | RBAC, Network Policies e Pod Security |
 | `v0.12.0` | 🔜 | Istio ou Linkerd gerenciando tráfego e mTLS entre serviços |
 | `v1.0.0` | 🔜 | Tudo integrado, documentado, estável e com rollback validado |
@@ -64,42 +65,46 @@ k8s-homelab/
 │   └── modules/
 │       └── vm/
 │           ├── variables.tf
-│           ├── volumes.tf                 # Disco da VM + ISO cloud-init
+│           ├── versions.tf
+│           ├── volumes.tf
 │           ├── cloudinit.tf
-│           ├── vm.tf                      # Domínio KVM
+│           ├── vm.tf
 │           ├── outputs.tf
 │           └── cloud-init/
 │               ├── user-data.tpl
 │               └── network-config.yaml
 ├── ansible/
 │   ├── install-k3s.yml                    # Playbook de instalação do k3s
-│   ├── install-mongodb.yml                # Playbook de instalação do MongoDB — milestone v0.6.0
-│   ├── install-kafka.yml                  # Playbook de instalação do Kafka — milestone v0.7.0
+│   ├── install-argocd.yml                 # Playbook de bootstrap do ArgoCD
+│   ├── bootstrap-cluster.yml              # Wrapper: install-k3s + install-argocd
+│   ├── install-mongodb.yml                # Milestone v0.6.0
+│   ├── install-kafka.yml                  # Milestone v0.7.0
+│   ├── requirements.yml                   # Collections necessárias
+│   ├── files/                             # Values, manifests, credenciais geradas
+│   │   ├── argocd-values.yaml
+│   │   └── applicationset.yaml            # Cópia de bootstrap (sync com k8s-gitops)
 │   └── inventory/
-│       └── hosts.ini.example              # Template de inventário — copiar e preencher
+│       └── hosts.ini.example              # Template de inventário
 ├── k8s/
-│   ├── monitoring/
-│   │   ├── 01-namespace-rbac.yaml         # Namespace + RBAC do Prometheus
-│   │   ├── 02-prometheus-configmap.yaml   # Configuração de scrape do Prometheus
-│   │   ├── 03-prometheus.yaml             # Deployment + Service do Prometheus
-│   │   ├── 04-grafana.yaml                # PVC + Deployment + Service + datasources do Grafana
-│   │   ├── 05-ingress.yaml                # Ingress para Grafana e Prometheus
-│   │   ├── 06-node-exporter.yaml          # DaemonSet + Service do Node Exporter
-│   │   ├── loki-values.yaml               # Helm values do Loki
-│   │   ├── promtail-values.yaml           # Helm values do Promtail
-│   │   └── dashboards/
-│   │       ├── kubernetes-cluster-monitoring-315.json
-│   │       └── logs-kubernetes.json
-│   └── cd/
-│       ├── argocd-values.yaml             # Helm values do ArgoCD
-│       ├── ingress.yaml                   # Ingress para argocd.homelab.local
-│       └── applicationset.yaml            # ApplicationSet — monitora apps/* no k8s-gitops
+│   └── monitoring/                        # Será migrado para k8s-gitops em v0.5.4
+│       ├── 01-namespace-rbac.yaml
+│       ├── 02-prometheus-configmap.yaml
+│       ├── 03-prometheus.yaml
+│       ├── 04-grafana.yaml
+│       ├── 05-ingress.yaml
+│       ├── 06-node-exporter.yaml
+│       ├── loki-values.yaml
+│       ├── promtail-values.yaml
+│       └── dashboards/
+│           ├── kubernetes-cluster-monitoring-315.json
+│           ├── logs-kubernetes.json
+│           └── jvm-metrics.json
 ├── scripts/
 │   ├── validate-connectivity.sh           # Validação do milestone v0.1.0
 │   ├── validate-k8s.sh                    # Validação do milestone v0.2.0
 │   ├── validate-observability.sh          # Validação do milestone v0.3.0
 │   ├── validate-observability-logs.sh     # Validação do milestone v0.4.0
-│   ├── validate-gitops.sh                 # Validação do milestone v0.5.0
+│   ├── validate-gitops.sh                 # Validação do milestone v0.5.x
 │   ├── validate-mongodb.sh                # Validação do milestone v0.6.0
 │   └── validate-kafka.sh                  # Validação do milestone v0.7.0
 └── docs/
@@ -111,7 +116,8 @@ k8s-homelab/
     │   ├── ADR-005-observability-stack.md
     │   ├── ADR-006-loki-stack.md
     │   ├── ADR-007-gitops.md
-    │   └── ADR-008-terraform-module-structure.md
+    │   ├── ADR-008-terraform-module-structure.md
+    │   └── ADR-009-argocd-bootstrap.md
     ├── guides/
     │   ├── vm-provisioning.md
     │   ├── kubernetes.md
@@ -135,16 +141,21 @@ cd terraform/
 terraform init
 terraform apply
 
-# Milestone v0.2.0 — instalar o k3s
+# Milestones v0.2.0 + v0.5.3 — instalar k3s e ArgoCD em sequência
 cp ansible/inventory/hosts.ini.example ansible/inventory/hosts.ini
 # editar hosts.ini com IP da VM e path da chave SSH
-cd ansible/
-ansible-playbook -i inventory/hosts.ini install-k3s.yml
 
-# Milestone v0.3.0 — instalar a stack de observabilidade
+cd ansible/
+ansible-galaxy collection install -r requirements.yml
+ansible-playbook -i inventory/hosts.ini bootstrap-cluster.yml
+
+# OU instalar separadamente
+ansible-playbook -i inventory/hosts.ini install-k3s.yml
+ansible-playbook install-argocd.yml
+
+# Milestones v0.3.0 + v0.4.0 — instalar a stack de observabilidade
 kubectl --kubeconfig=$HOME/.kube/k8s-homelab.yaml apply -f k8s/monitoring/
 
-# Milestone v0.4.0 — instalar a stack de logs
 helm install loki grafana/loki \
   --kubeconfig=$HOME/.kube/k8s-homelab.yaml \
   --namespace monitoring \
@@ -154,15 +165,6 @@ helm install promtail grafana/promtail \
   --kubeconfig=$HOME/.kube/k8s-homelab.yaml \
   --namespace monitoring \
   --values k8s/monitoring/promtail-values.yaml
-
-# Milestone v0.5.0 — instalar o ArgoCD e configurar GitOps
-helm install argocd argo/argo-cd \
-  --kubeconfig=$HOME/.kube/k8s-homelab.yaml \
-  --namespace argocd \
-  --values k8s/cd/argocd-values.yaml
-
-kubectl --kubeconfig=$HOME/.kube/k8s-homelab.yaml apply -f k8s/cd/ingress.yaml
-kubectl --kubeconfig=$HOME/.kube/k8s-homelab.yaml apply -f k8s/cd/applicationset.yaml
 
 # Milestone v0.6.0 — provisionar VM do MongoDB e instalar
 cd terraform/
@@ -183,7 +185,7 @@ ansible-playbook -i inventory/hosts.ini install-kafka.yml
 | `docs/guides/kubernetes.md` | Guia de instalação do k3s via Ansible — milestone `v0.2.0` |
 | `docs/guides/observability-metrics.md` | Guia de instalação da stack de observabilidade — milestone `v0.3.0` |
 | `docs/guides/observability-logs.md` | Guia de instalação da stack de logs — milestone `v0.4.0` |
-| `docs/guides/gitops.md` | Guia de instalação do ArgoCD e GitOps — milestone `v0.5.0` |
+| `docs/guides/gitops.md` | Guia de instalação do ArgoCD via Ansible — milestone `v0.5.3` |
 | `docs/adr/` | Decisões arquiteturais e alternativas rejeitadas |
 | `docs/runbook/libvirt.md` | Operação do KVM e problemas encontrados |
 | `docs/runbook/kubernetes.md` | Operação do k3s e problemas encontrados |

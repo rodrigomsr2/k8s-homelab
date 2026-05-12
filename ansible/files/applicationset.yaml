@@ -1,0 +1,44 @@
+# ⚠️  IMPORTANTE — sincronizar manualmente com:
+#     k8s-gitops/apps/argocd/argocd-config/applicationset.yaml
+#
+# Este arquivo é a cópia de bootstrap usada pelo Ansible no primeiro install
+# do ArgoCD. Após o ArgoCD subir, ele se auto-gerencia pelo manifest no
+# k8s-gitops — que DEVE ser bit-idêntico a este.
+#
+# Divergência entre os dois arquivos leva o ArgoCD a marcar a Application
+# `argocd-config` como OutOfSync e tentar reconciliar para o estado do Git.
+# Em outras palavras: o k8s-gitops vence. Esta cópia é descartável após o
+# bootstrap, mas precisa estar correta para o primeiro install funcionar.
+#
+# Veja docs/adr/ADR-009-argocd-bootstrap.md para o racional dessa duplicação.
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: homelab
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/rodrigomsr2/k8s-gitops
+        revision: main
+        directories:
+          - path: apps/*/*
+  template:
+    metadata:
+      name: '{{path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/rodrigomsr2/k8s-gitops
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path[1]}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
