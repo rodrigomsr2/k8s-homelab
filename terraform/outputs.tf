@@ -3,6 +3,16 @@ output "k8s_vm_name" {
   value       = module.k8s.vm_name
 }
 
+output "k8s_vm_ip" {
+  description = "IP estático da VM do Kubernetes na rede homelab"
+  value       = "192.168.123.10"
+}
+
+output "homelab_network_name" {
+  description = "Nome da rede libvirt gerenciada para o homelab"
+  value       = libvirt_network.homelab.name
+}
+
 output "ssh_user" {
   description = "Usuário SSH padrão das VMs (convenção do projeto)"
   value       = "devops"

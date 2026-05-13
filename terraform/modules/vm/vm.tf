@@ -3,7 +3,7 @@
 #   - CPU em modo host-passthrough (necessário para k8s nested)
 #   - Disco principal qcow2 em virtio (vda)
 #   - ISO cloud-init montada como cdrom sata (sda)
-#   - Interface de rede na rede NAT default do libvirt
+#   - Interface de rede definida por var.network_name (default: "default")
 #   - Console serial para acesso via "virsh console"
 #   - start = true: VM inicia automaticamente após terraform apply
 
@@ -72,7 +72,7 @@ resource "libvirt_domain" "vm" {
         }
         source = {
           network = {
-            network = "default"
+            network = var.network_name
           }
         }
       }

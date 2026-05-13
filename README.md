@@ -34,6 +34,7 @@ Ambiente local isolado para estudo e demonstração de habilidades DevOps.
 | `v0.5.2` | ✅ | Refactor do Terraform para módulo reutilizável `modules/vm/` — sem alteração funcional |
 | `v0.5.3` | ✅ | Bootstrap do ArgoCD via Ansible, manifests auto-managed via k8s-gitops |
 | `v0.5.4` | ✅ | Monitoring (Prometheus, Grafana, Loki) migrado para o k8s-gitops |
+| `v0.5.5` | ✅ | Rede `homelab` gerenciada via Terraform, k8s-node-01 com IP estático |
 | `v0.6.0` | 🔜 | VM dedicada provisionada via Terraform, MongoDB instalado e operacional |
 | `v0.7.0` | 🔜 | VM dedicada provisionada via Terraform, Kafka instalado e operacional |
 | `v0.8.0` | 🔜 | Microserviços no k8s consumindo Kafka e MongoDB |

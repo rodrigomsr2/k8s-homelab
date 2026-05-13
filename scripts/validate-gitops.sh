@@ -29,10 +29,10 @@ else
 fi
 
 # 2. ApplicationSet criado
-kubectl --kubeconfig="$KUBECONFIG" get applicationset nexus -n argocd \
+kubectl --kubeconfig="$KUBECONFIG" get applicationset homelab -n argocd \
   --no-headers &>/dev/null \
-  && ok "ApplicationSet nexus existe" \
-  || fail "ApplicationSet nexus não encontrado"
+  && ok "ApplicationSet homelab existe" \
+  || fail "ApplicationSet homelab não encontrado"
 
 # 3. Application nexus-argocd Synced
 SYNC=$(kubectl --kubeconfig="$KUBECONFIG" get application nexus-argocd \

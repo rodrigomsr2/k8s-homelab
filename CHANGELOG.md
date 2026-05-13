@@ -11,6 +11,28 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ---
 
+## [0.5.5] — network-managed — 2026-05-13
+
+### Added
+- Rede `libvirt_network "homelab"` gerenciada pelo Terraform — CIDR `192.168.123.0/24`, NAT, bridge dedicado `virbr-homelab`, pool DHCP `.100–.254`. Convenção de alocação reserva `.10–.49` para IPs estáticos de VMs gerenciadas (`terraform/network.tf`).
+- Variáveis `network_name`, `static_ip`, `gateway` no módulo `modules/vm/` — features aditivas com defaults retrocompatíveis (network `"default"`, IPs `null`).
+- Template `cloud-init/network-config.tpl` com lógica condicional: gera bloco `addresses + routes` quando `static_ip` está setado, ou `dhcp4: true` quando não.
+- Outputs `k8s_vm_ip` e `homelab_network_name` no root.
+- ADR-012 — racional da rede dedicada, alternativas rejeitadas (`default` + DHCP reservation, cloud-init static sem rede nova, bridge, isolated, dual-NIC).
+
+### Changed
+- VM `k8s-node-01` migrada da rede `default` para `homelab` com IP estático `192.168.123.10`.
+- `scripts/validate-connectivity.sh` lê IP via `terraform output -raw k8s_vm_ip` em vez de `virsh domifaddr` — necessário porque IP estático não gera DHCP lease.
+- `scripts/validate-gitops.sh` referencia ApplicationSet `homelab` (renomeado no `v0.5.3` — atualização atrasada visível agora que o ambiente foi reconstruído do zero).
+
+### Migration notes
+- O `terraform apply` da migração exigiu `-replace=` explícito em três pontos: `module.k8s.libvirt_domain.vm` e `module.k8s.libvirt_volume.vm_disk` (forçados para garantir re-execução do cloud-init com `network-config` novo), e `module.k8s.libvirt_volume.cloudinit_iso` (provider rejeita `update in-place` em volumes — bug do provider v0.9.x, ver runbook).
+- Após `terraform apply`: cluster k3s reconstruído via `ansible-playbook bootstrap-cluster.yml`; ArgoCD ressincronizou monitoring, applications e configs a partir do `k8s-gitops` automaticamente. Tempo total da migração: ~10 minutos.
+- Atualizações manuais pós-migração: `/etc/hosts` do host físico, `CLAUDE.local.md` (gitignored), `ansible/inventory/hosts.ini` (gitignored). Cada `192.168.122.2` substituído por `192.168.123.10`.
+- Validação final: 38 testes passando em 5 scripts (`connectivity`, `k8s`, `gitops`, `observability`, `observability-logs`).
+
+---
+
 ## [0.5.4] — 2026-05-01
 
 ### Changed

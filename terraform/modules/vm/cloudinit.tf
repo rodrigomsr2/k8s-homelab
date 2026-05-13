@@ -21,5 +21,8 @@ resource "libvirt_cloudinit_disk" "init" {
     "instance-id"    = var.vm_name
     "local-hostname" = var.vm_name
   })
-  network_config = file("${path.module}/cloud-init/network-config.yaml")
+  network_config = templatefile("${path.module}/cloud-init/network-config.tpl", {
+    static_ip = var.static_ip
+    gateway   = var.gateway
+  })
 }

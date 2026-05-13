@@ -19,7 +19,7 @@ warn() { echo -e "${YELLOW}  ⚠ $1${NC}"; }
 
 echo ""
 echo -e "${BLUE}╔══════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║     Validação de Conectividade - v0.1.0      ║${NC}"
+echo -e "${BLUE}║     Validação de Conectividade               ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -33,14 +33,8 @@ KEY_PATH=$(terraform output -raw private_key_path 2>/dev/null) \
   || fail "Não foi possível obter o caminho da chave SSH."
 VM_USER=$(terraform output -raw ssh_user 2>/dev/null) \
   || fail "Não foi possível obter o usuário SSH."
-
-# ── Obter IP via virsh ─────────────────────────────────────────────────────────
-info "Obtendo IP da VM via virsh..."
-VM_IP=$(sudo virsh domifaddr "$VM_NAME" 2>/dev/null \
-  | awk '/ipv4/ {print $4}' \
-  | cut -d'/' -f1)
-
-[[ -n "$VM_IP" ]] || fail "IP não encontrado. A VM pode ainda estar inicializando."
+VM_IP=$(terraform output -raw k8s_vm_ip 2>/dev/null) \
+  || fail "Não foi possível obter o IP da VM. A partir do v0.5.5 o IP é declarativo via Terraform."
 
 echo ""
 echo "  VM      : $VM_NAME"

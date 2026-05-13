@@ -266,3 +266,63 @@ virsh start k8s-node-01
 No provider `dmacvicar/libvirt` v0.9.x, o tipo do driver de disco não é
 inferido automaticamente a partir do formato do volume — precisa ser declarado
 explicitamente no `libvirt_domain`. Omitir o `type` resulta em `raw` implícito.
+
+---
+
+## Problema 6 — `update in-place` falha em `libvirt_volume` no provider v0.9.x
+
+**Sintoma**
+
+`terraform plan` propõe `update in-place` para um `libvirt_volume`
+existente (geralmente um `cloudinit_iso` quando o `libvirt_cloudinit_disk`
+de origem foi recriado). `terraform apply` executa parcialmente, mas o
+update do volume falha com:
+
+```
+Error: Update Not Supported
+
+  with module.k8s.libvirt_volume.cloudinit_iso,
+
+Storage volumes cannot be updated. All changes require replacement.
+```
+
+**Causa**
+
+O backend do provider libvirt v0.9.x não implementa update parcial em
+volumes — o storage do libvirt é immutable após criação. O schema do
+provider deixa o Terraform planejar `~ update`, mas o método `Update`
+do recurso rejeita qualquer mudança em runtime, exigindo destroy + create.
+
+É um bug de fidelidade entre o plan e o apply do provider rewrite —
+plan diz uma coisa, apply rejeita. Pode estar resolvido em versões
+futuras; vale checar release notes ao atualizar o provider.
+
+**Solução**
+
+Forçar replace explícito no apply seguinte ao erro:
+
+```bash
+terraform apply -replace='module.<name>.libvirt_volume.<volume_name>'
+```
+
+Para o caso específico do `cloudinit_iso` que aparece sempre que o
+`libvirt_cloudinit_disk` muda:
+
+```bash
+terraform apply -replace='module.k8s.libvirt_volume.cloudinit_iso'
+```
+
+O state ainda fica consistente após a falha — recursos que apply criou
+antes do erro permanecem rastreados, e os que não foram tocados também.
+Apenas o volume problemático precisa de re-apply com flag explícita.
+
+**Lição**
+
+`terraform plan` no provider libvirt v0.9.x não é fonte definitiva de
+verdade para volumes. Em qualquer mudança que afete um `libvirt_volume`
+existente (mesmo que seja só o `url` do `create.content`), planejar
+mentalmente como replace, mesmo que o plan diga in-place.
+
+Se a mudança envolve `libvirt_cloudinit_disk`, sempre vai propagar para
+o `cloudinit_iso` correspondente — então o `-replace=` é o padrão, não
+exceção.

@@ -3,6 +3,9 @@
 #   4 vCPU / 8 GiB RAM / 40 GiB disco
 # Suficiente para todo o stack futuro: monitoring, GitOps, microserviços,
 # service mesh.
+#
+# Rede: homelab (ADR-012), IP estático 192.168.123.10 — primeira VM na faixa
+# de IPs reservados (.10-.49).
 
 module "k8s" {
   source = "./modules/vm"
@@ -15,4 +18,8 @@ module "k8s" {
   storage_pool     = var.storage_pool
   ubuntu_base_path = libvirt_volume.ubuntu_base.path
   ssh_public_key   = tls_private_key.homelab.public_key_openssh
+
+  network_name = libvirt_network.homelab.name
+  static_ip    = "192.168.123.10"
+  gateway      = "192.168.123.1"
 }
