@@ -35,7 +35,7 @@ Ambiente local isolado para estudo e demonstração de habilidades DevOps.
 | `v0.5.3` | ✅ | Bootstrap do ArgoCD via Ansible, manifests auto-managed via k8s-gitops |
 | `v0.5.4` | ✅ | Monitoring (Prometheus, Grafana, Loki) migrado para o k8s-gitops |
 | `v0.5.5` | ✅ | Rede `homelab` gerenciada via Terraform, k8s-node-01 com IP estático |
-| `v0.6.0` | 🔜 | VM dedicada provisionada via Terraform, MongoDB instalado e operacional |
+| `v0.6.0` | ✅ | MongoDB 8.0 standalone via Ansible, VM dedicada (192.168.123.20) acessível na rede homelab |
 | `v0.7.0` | 🔜 | VM dedicada provisionada via Terraform, Kafka instalado e operacional |
 | `v0.8.0` | 🔜 | Microserviços no k8s consumindo Kafka e MongoDB |
 | `v0.9.0` | 🔜 | OpenTelemetry coletando traces dos microserviços, visível no Grafana |
@@ -61,6 +61,7 @@ k8s-homelab/
 │   ├── ssh.tf                             # Chave ED25519 compartilhada
 │   ├── image.tf                           # Imagem base Ubuntu (compartilhada)
 │   ├── k8s.tf                             # Chamada do módulo para a VM do k8s
+│   ├── mongodb.tf                         # Módulo + outputs da VM do MongoDB
 │   ├── variables.tf
 │   ├── outputs.tf
 │   └── modules/
@@ -109,18 +110,22 @@ k8s-homelab/
     │   ├── ADR-007-gitops.md
     │   ├── ADR-008-terraform-module-structure.md
     │   ├── ADR-009-argocd-bootstrap.md
-    │   └── ADR-010-monitoring-gitops.md
+    │   ├── ADR-010-monitoring-gitops.md
+│   │   ├── ADR-011-network-management.md
+│   │   └── ADR-012-mongodb-deployment.md
     ├── guides/
     │   ├── vm-provisioning.md
     │   ├── kubernetes.md
     │   ├── observability-metrics.md
     │   ├── observability-logs.md
-    │   └── gitops.md
+    │   ├── gitops.md
+│   │   └── mongodb.md
     └── runbook/
         ├── libvirt.md
         ├── kubernetes.md
         ├── observability.md
-        └── loki.md
+        ├── loki.md
+│       └── mongodb.md
 ```
 
 ## Início rápido
@@ -171,9 +176,11 @@ ansible-playbook -i inventory/hosts.ini install-kafka.yml
 | `docs/guides/observability-metrics.md` | Guia de instalação da stack de observabilidade — milestone `v0.3.0` |
 | `docs/guides/observability-logs.md` | Guia de instalação da stack de logs — milestone `v0.4.0` |
 | `docs/guides/gitops.md` | Guia de instalação do ArgoCD via Ansible — milestone `v0.5.3` |
+| `docs/guides/mongodb.md` | Guia de instalação do MongoDB standalone — milestone `v0.6.0` |
 | `docs/adr/` | Decisões arquiteturais e alternativas rejeitadas |
 | `docs/runbook/libvirt.md` | Operação do KVM e problemas encontrados |
 | `docs/runbook/kubernetes.md` | Operação do k3s e problemas encontrados |
 | `docs/runbook/observability.md` | Operação da stack de observabilidade e problemas encontrados |
 | `docs/runbook/loki.md` | Operação da stack de logs e problemas encontrados |
+| `docs/runbook/mongodb.md` | Operação do MongoDB e problemas encontrados |
 | `.claude/CLAUDE.md` | Índice de navegação para agentes de IA |

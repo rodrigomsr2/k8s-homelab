@@ -1,0 +1,106 @@
+---
+# Instalação do MongoDB 8.0 Community standalone.
+# Decisões registradas na ADR-012:
+#   - Standalone (sem replica set)
+#   - Sem autenticação
+#   - bindIp 0.0.0.0 (acessível via rede homelab)
+# Cada limitação será revisitada quando for sentida na prática.
+
+- name: Instalar e configurar MongoDB 8.0 standalone
+  hosts: mongodb
+  become: true
+
+  vars:
+    mongodb_version: "8.0"
+    mongodb_keyring_path: /usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg
+    mongodb_repo_list_path: /etc/apt/sources.list.d/mongodb-org-{{ mongodb_version }}.list
+
+  tasks:
+
+    # ─── Repositório oficial MongoDB ─────────────────────────────────────────
+
+    - name: Instalar dependências para configurar o repo
+      ansible.builtin.apt:
+        name:
+          - gnupg
+          - curl
+          - ca-certificates
+        state: present
+        update_cache: true
+
+    - name: Importar chave GPG oficial do MongoDB {{ mongodb_version }}
+      ansible.builtin.shell:
+        cmd: >
+          curl -fsSL https://www.mongodb.org/static/pgp/server-{{ mongodb_version }}.asc
+          | gpg -o {{ mongodb_keyring_path }} --dearmor
+        creates: "{{ mongodb_keyring_path }}"
+
+    - name: Adicionar repositório oficial MongoDB {{ mongodb_version }}
+      ansible.builtin.copy:
+        dest: "{{ mongodb_repo_list_path }}"
+        content: |
+          deb [ arch=amd64,arm64 signed-by={{ mongodb_keyring_path }} ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/{{ mongodb_version }} multiverse
+        mode: '0644'
+      register: mongodb_repo
+
+    - name: Atualizar índice apt após adicionar repo
+      ansible.builtin.apt:
+        update_cache: true
+      when: mongodb_repo.changed
+
+    # ─── Instalação ──────────────────────────────────────────────────────────
+
+    - name: Instalar mongodb-org
+      ansible.builtin.apt:
+        name: mongodb-org
+        state: present
+
+    # ─── Configuração ────────────────────────────────────────────────────────
+
+    - name: Configurar /etc/mongod.conf
+      ansible.builtin.copy:
+        dest: /etc/mongod.conf
+        mode: '0644'
+        owner: root
+        group: root
+        content: |
+          # mongod.conf — gerenciado pelo Ansible (install-mongodb.yml)
+          # NÃO EDITAR MANUALMENTE — toda mudança vai pelo playbook.
+
+          storage:
+            dbPath: /var/lib/mongodb
+
+          systemLog:
+            destination: file
+            logAppend: true
+            path: /var/log/mongodb/mongod.log
+
+          net:
+            port: 27017
+            bindIp: 0.0.0.0
+
+          processManagement:
+            timeZoneInfo: /usr/share/zoneinfo
+      notify: Restart mongod
+
+    # ─── Serviço ─────────────────────────────────────────────────────────────
+
+    - name: Habilitar e iniciar mongod
+      ansible.builtin.systemd:
+        name: mongod
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    - name: Aguardar porta 27017 responder
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 27017
+        timeout: 30
+
+  handlers:
+
+    - name: Restart mongod
+      ansible.builtin.systemd:
+        name: mongod
+        state: restarted

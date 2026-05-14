@@ -28,6 +28,7 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 | `v0.3.0` — Métricas | `docs/guides/observability-metrics.md` | `docs/runbook/observability.md` |
 | `v0.4.0` — Logs | `docs/guides/observability-logs.md` | `docs/runbook/loki.md` |
 | `v0.5.0` — GitOps | `docs/guides/gitops.md` | — |
+| `v0.6.0` — MongoDB | `docs/guides/mongodb.md` | `docs/runbook/mongodb.md` |
 
 ---
 
@@ -43,6 +44,8 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 | `docs/adr/ADR-006-loki-stack.md` | Stack de logs: Helm, Promtail, SingleBinary, filesystem |
 | `docs/adr/ADR-007-gitops.md` | GitOps: ArgoCD via Helm, ApplicationSet, repositório k8s-gitops dedicado |
 | `docs/adr/ADR-010-monitoring-gitops.md` | Observabilidade gerenciada via GitOps no repositório k8s-gitops |
+| `docs/adr/ADR-011-network-management.md` | Rede `homelab` gerenciada pelo Terraform |
+| `docs/adr/ADR-012-mongodb-deployment.md` | MongoDB 8.0 standalone, sem auth, sizing 4GB |
 
 ---
 
@@ -54,6 +57,7 @@ Construído em fases incrementais, cada fase validada antes de avançar.
 | `docs/runbook/kubernetes.md` | k3s, kubectl, pods, namespaces |
 | `docs/runbook/observability.md` | Prometheus, Grafana, Node Exporter |
 | `docs/runbook/loki.md` | Loki, Promtail, Helm, pipeline de logs |
+| `docs/runbook/mongodb.md` | MongoDB, mongod, mongosh |
 
 ---
 

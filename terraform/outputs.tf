@@ -1,12 +1,6 @@
-output "k8s_vm_name" {
-  description = "Nome da VM do Kubernetes"
-  value       = module.k8s.vm_name
-}
-
-output "k8s_vm_ip" {
-  description = "IP estático da VM do Kubernetes na rede homelab"
-  value       = "192.168.123.10"
-}
+# Outputs de recursos compartilhados entre todas as VMs.
+# Outputs específicos de cada VM ficam no .tf da VM correspondente
+# (k8s.tf, mongodb.tf, etc.).
 
 output "homelab_network_name" {
   description = "Nome da rede libvirt gerenciada para o homelab"

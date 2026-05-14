@@ -14,9 +14,14 @@ Rede dedicada `homelab` (192.168.123.0/24) gerenciada como recurso compartilhado
 | `ssh.tf` | Geração do par ED25519 — chave compartilhada entre todas as VMs |
 | `image.tf` | Imagem base Ubuntu 24.04 — recurso compartilhado |
 | `network.tf` | Rede `homelab` (NAT, 192.168.123.0/24) — recurso compartilhado |
-| `k8s.tf` | Chamada do módulo para a VM do Kubernetes |
+| `k8s.tf` | Módulo + outputs da VM do Kubernetes |
+| `mongodb.tf` | Módulo + outputs da VM do MongoDB |
 | `variables.tf` | Variáveis de root (storage_pool, ubuntu_image_url) |
-| `outputs.tf` | Outputs prefixados por VM (k8s_vm_name, k8s_vm_ip, etc.) |
+| `outputs.tf` | Outputs de recursos compartilhados (rede, SSH user, chave) |
+
+**Convenção:** cada VM dedicada tem seu próprio arquivo `.tf` no root, contendo
+tanto a chamada do módulo quanto os outputs específicos daquela VM. O
+`outputs.tf` central fica apenas com outputs de recursos compartilhados.
 
 ## Módulo `modules/vm/`
 
@@ -38,15 +43,15 @@ Rede dedicada `homelab` (192.168.123.0/24) gerenciada como recurso compartilhado
 tls_private_key.homelab (root)
     ├── local_sensitive_file.private_key   (.ssh/homelab_ed25519)
     ├── local_file.public_key              (.ssh/homelab_ed25519.pub)
-    └── module.k8s.ssh_public_key          (input do módulo)
+    └── module.<vm>.ssh_public_key         (input do módulo)
 
 libvirt_volume.ubuntu_base (root)
-    └── module.k8s.ubuntu_base_path        (input do módulo)
-        └── module.k8s.libvirt_volume.vm_disk.backing_store
+    └── module.<vm>.ubuntu_base_path       (input do módulo)
+        └── module.<vm>.libvirt_volume.vm_disk.backing_store
 
 libvirt_network.homelab (root)
-    └── module.k8s.network_name            (input do módulo)
-        └── module.k8s.libvirt_domain.vm.devices.interfaces[0].source.network
+    └── module.<vm>.network_name           (input do módulo)
+        └── module.<vm>.libvirt_domain.vm.devices.interfaces[0].source.network
 
 (dentro do módulo:)
 libvirt_cloudinit_disk.init
@@ -81,7 +86,7 @@ Decisão registrada na ADR-011.
   no disco principal — ver `runbook/libvirt.md` problema #5.
 - Cdrom (cloud-init ISO) não leva `driver.type` — imagem raw.
 - `create.start = true` faz a VM iniciar após `terraform apply`.
-- IP estático da VM é exposto como output (`k8s_vm_ip`) a partir do v0.5.5 —
+- IP estático da VM é exposto como output (`<vm>_vm_ip`) a partir do v0.5.5 —
   declarado no Terraform, não mais via `virsh domifaddr`.
 - AppArmor requer extensão local em `libvirt-qemu.d/images` —
   ver `runbook/libvirt.md` problema #4.

@@ -11,6 +11,27 @@ Versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/) — ve
 
 ---
 
+## [0.6.0] — mongodb-deployed — 2026-05-14
+
+### Added
+- VM dedicada `mongodb-01` provisionada via Terraform (`terraform/mongodb.tf`) — reusa o módulo `modules/vm/` com sizing 4 GiB RAM / 2 vCPU / 20 GiB disco, IP estático `192.168.123.20` na rede `homelab`.
+- Playbook `ansible/install-mongodb.yml` — adiciona repositório oficial MongoDB 8.0 com chave GPG verificada, instala `mongodb-org`, sobrescreve `/etc/mongod.conf` (bindIp `0.0.0.0`, porta 27017, sem auth), habilita e inicia o serviço.
+- Grupo `[mongodb]` adicionado em `ansible/inventory/hosts.ini.example`.
+- Script de validação `scripts/validate-mongodb.sh` — 9 testes em 4 camadas (VM, serviço, bind/rede, protocolo MongoDB).
+- Guia de instalação `docs/guides/mongodb.md` cobrindo pré-requisitos do host (incluindo `mongosh` via repo oficial), provisionamento, instalação, validação, operação básica e desinstalação.
+- Runbook `docs/runbook/mongodb.md` (estrutura inicial, preenchido conforme problemas reais aparecerem).
+- ADR-012 — racional do MongoDB standalone, sem auth, versão 8.0, sizing 4GB. Alternativas rejeitadas: replica set de 1 ou 3 nós, autenticação desde já, MongoDB 7.0 LTS, deploy no k8s via Operator.
+
+### Changed
+- `terraform/outputs.tf` enxuto: outputs específicos da VM do k8s (`k8s_vm_name`, `k8s_vm_ip`) movidos para `terraform/k8s.tf`. Convenção: cada VM tem seu próprio arquivo `.tf` no root contendo módulo + outputs específicos; `outputs.tf` central fica apenas com outputs de recursos compartilhados (rede, SSH user, chave privada).
+- `terraform/CLAUDE.md` atualizado com a convenção acima e nova entrada para `mongodb.tf`.
+
+### Migration notes
+- `terraform init` é obrigatório após adicionar um novo `module` block, mesmo quando o source é local e já conhecido. Sem isso, `terraform plan` falha com `Module not installed`.
+- Refactor dos outputs do k8s (`outputs.tf` → `k8s.tf`) não exigiu `terraform state mv` — outputs não vivem no state, apenas resources.
+
+---
+
 ## [0.5.5] — network-managed — 2026-05-13
 
 ### Added
